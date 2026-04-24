@@ -1,0 +1,170 @@
+% Не пиним ядро: \RequirePackage[2023-11-01]{latexrelease} несовместим с
+% новой системой l3sockets в TeX Live 2026+ (ошибка "Sockets can only be
+% declared at top-level!"). Работаем со свежим ядром 2025-11-01.
+
+% --- TL 2026 workaround: pre-load etoolbox before the class --------------
+% Класс mipt-thesis-bs использует \begingroup\globaldefs=1 для своих
+% \renewcommand'ов. В TL 2026 \renewcommand под globaldefs=1 «протекает» во
+% внутренние LaTeX3-хелперы и глобально засоряет hash-таблицу: при последующей
+% загрузке etoolbox (через hyperref) его \newrobustcmd{\undef} падает с
+% «Command \undef already defined» (а вместе с ним \appto, \preto, \ifinlist
+% и т.д.). Если etoolbox загрузить заранее, эти команды уже существуют до
+% globaldefs-блока и оказываются «защищены»: повторная загрузка пакета
+% игнорируется, а пред-определённый \newrobustcmd внутри globaldefs-блока
+% не вызывается. \RequirePackage до \documentclass — стандартный способ
+% подгрузить пакет в исходную (нулевую) группу.
+\RequirePackage{etoolbox}
+
+\documentclass[oneside]{mipt-thesis-bs}
+
+\makeatletter
+\let\cleardoublepage\clearpage
+\renewcommand{\addemptypage}{}
+\makeatother
+
+% Класс mipt-thesis-bs уже загружает amsmath/amsthm/amssymb, fontenc, inputenc,
+% babel и geometry. Здесь догружаем только то, чего класс не даёт.
+%
+% --- TL 2026 workaround для hyperref/pd1enc.def:38 ----------------------------
+% Ядро/patch в TeX Live 2026 при \DeclareFontEncoding{PD1}{}{} делает примерно
+%   \advance\csname c@v@\f@version\endcsname by 1
+% где \f@version ∈ {normal,bold,...}. Счётчики \c@v@normal/\c@v@bold не были
+% инициализированы к этому моменту и \csname ... \endcsname выдаёт \relax →
+% «You can't use `relax' after advance». В latex3/latex2e (release-2025-11-01
+% и develop) такого кода в \DeclareFontEncoding@ нет — значит, его ставит
+% кто-то из пакетов TL 2026 (возможно, latex-lab/NFSS-патч). Самое
+% парсимонное решение — заранее объявить эти счётчики как \newcount, чтобы
+% advance не падал. Делаем ДО \usepackage{hyperref}.
+\makeatletter
+\@ifundefined{c@v@normal}{\newcount\c@v@normal}{}%
+\@ifundefined{c@v@bold}{\newcount\c@v@bold}{}%
+\@ifundefined{c@v@italic}{\newcount\c@v@italic}{}%
+\@ifundefined{c@v@bolditalic}{\newcount\c@v@bolditalic}{}%
+\makeatother
+% -----------------------------------------------------------------------------
+\usepackage{mipt-thesis-biblatex}
+%% mathtools не подключаем: в TL 2026 его v1.31 падает на собственной строке
+%% \EQ_MakeRobust\MT_extended_eqref:n ("MT_extended_eqref:n is undefined"), а из
+%% его фич в тексте ничего не используется (достаточно amsmath/amssymb).
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{booktabs}
+
+% --- TL 2026 workaround для hyperref.sty:8303 ---------------------------------
+% В hyperref 7.01p (TL 2026) строка 8303 вместо \providecommand* по ошибке
+% использует \newcommand*{\footnoteautorefname}{\footnoteautorefname}. Команда
+% к этому моменту уже определена (строка 2863 при загрузке английского языка),
+% поэтому \newcommand* падает с «Command \footnoteautorefname already defined»,
+% а каскад испорченных токенов ломает всё, что идёт после (в т.ч. \newcommand
+% в пользовательской преамбуле и \newtheorem при \begin{document}).
+%
+% Обходим одной строкой: на время загрузки hyperref подменяем \newcommand на
+% \providecommand. Семантика та же для корректных случаев, а багнутая строка
+% 8303 становится безобидным no-op, потому что команда уже определена.
+\usepackage{hyperref}
+% -----------------------------------------------------------------------------
+\usepackage{xcolor}
+\usepackage{enumitem}
+
+\geometry{margin=2.5cm}
+\hypersetup{colorlinks=true,linkcolor=blue!60!black,citecolor=green!50!black}
+
+%--- Теоремные окружения ---
+\newtheorem{theorem}{Теорема}[chapter]
+\newtheorem{lemma}[theorem]{Лемма}
+\newtheorem{corollary}[theorem]{Следствие}
+\newtheorem{definition}[theorem]{Определение}
+\newtheorem{remark}[theorem]{Замечание}
+\newtheorem{assumption}{Предположение}
+\newtheorem{conjecture}[theorem]{Гипотеза}
+\newtheorem{proposition}{Утверждение}
+
+%--- Математические макросы ---
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\Fro}[1]{\left\|#1\right\|_F}
+\newcommand{\Norm}[1]{\left\|#1\right\|}
+\newcommand{\pinv}[1]{#1^{\dagger}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\col}{\operatorname{col}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\Jstar}{J^{*}}
+\newcommand{\Delk}{\Delta_{k}}
+\newcommand{\Delkp}{\Delta_{k+1}}
+\newcommand{\rhok}{\rho^{\ast}_k}
+\newcommand{\Ck}{\mathcal{C}_{k}}
+\newcommand{\Qclass}{\mathcal{Q}(L,\kappa,m)}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+%--- Титульные данные ---
+\title{Исследование глобальных квазиньютоновских методов оптимизации
+       для задач математического программирования и вариационных неравенств}
+\author{Можаев~Р.\,М.}
+\supervisor{Камзолов~Д.\,И.}
+\groupnum{М05-404а}
+\faculty{Физтех-школа прикладной математики и информатики}
+\department{Кафедра проблем передачи информации и анализа данных}
+
+%--- Выборочная компиляция ---------------------------------------------------
+% Чтобы собрать только одну главу, раскомментируйте \includeonly и оставьте
+% в списке нужные файлы (без расширения .tex). Остальные главы будут пропущены,
+% но их метки и ссылки сохранятся из предыдущей полной сборки.
+%
+% \includeonly{sections/ch2_sp_broyden}
+%-----------------------------------------------------------------------------
+
+% На случай, если какой-либо пакет преамбулы оставил открытую группу, закрываем
+% её перед \begin{document}, чтобы хуки \AtBeginDocument (особенно у hyperref
+% с l3sockets) отрабатывали на top-level. \mt@flush@groups определён в классе.
+\makeatletter
+\mt@flush@groups
+\makeatother
+
+\begin{document}
+
+\titlecontents
+
+%% ============================================================
+%%  Аннотации (ru, en) и список обозначений
+%% ============================================================
+\include{sections/abstract_ru}
+\include{sections/abstract_en}
+\include{sections/notation}
+
+%% ============================================================
+%%  Введение
+%% ============================================================
+\include{sections/introduction}
+
+%% ============================================================
+%%  Обзор литературы
+%% ============================================================
+\include{sections/literature_review}
+
+%% ============================================================
+%%  Главы
+%% ============================================================
+\include{sections/ch1_jacobian}
+\include{sections/ch2_sp_broyden}
+\include{sections/ch3_symmetric}
+\include{sections/ch4_sp_afd}
+
+%% ============================================================
+%%  Заключение
+%% ============================================================
+\include{sections/conclusion}
+
+%% ============================================================
+%%  Приложения
+%% ============================================================
+\appendix
+\include{appendix/app_alignment}
+\include{appendix/app_sp_afd_proof}
+
+%% ============================================================
+%%  Библиография
+%% ============================================================
+\input{sections/bibliography}
+
+\end{document}

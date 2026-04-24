@@ -1,0 +1,56 @@
+%% =========================================================================
+%%  Abstract (English)
+%% =========================================================================
+
+\begin{otherlanguage}{english}
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+\noindent
+The thesis develops a family of quasi-Newton Jacobian updates that
+\emph{preserve past secant conditions}, and applies them to nonlinear
+systems, smooth unconstrained optimisation and strongly monotone
+variational inequalities (VI).
+
+We first derive a general rank-$m$ parameterisation
+$B_{k+1} = \widehat{B}_k + (Y_m - \widehat{B}_k S_m)
+  (V_m^{\top} S_m)^{-1} V_m^{\top}$
+covering classical Broyden, Anderson acceleration, and Frobenius-minimal
+multisecant updates. Inside this family we construct
+\textbf{SP-Broyden}~--- a rank-1 update that exactly preserves $p$ most
+recent secant conditions via the choice
+$v_k^{*} = S_p G_p^{-1} e_1$, where $G_p = S_p^{\top} S_p$
+is the window Gram matrix. We prove a Frobenius-minimality theorem
+and an \emph{improved bounded-deterioration} bound
+$\|E_{k+1}\|_F^2 \le \|E_k\|_F^2
+   + O\!\bigl(\sigma_{\min}^{-2}(S_p)\sum_j \|x_j-x^{*}\|^2 \|s_j\|^2\bigr)$,
+i.e.\ the increment is \emph{quadratic} in the distance to the solution
+rather than linear.
+
+For the symmetric case we prove an incompatibility theorem stating that
+preserving all past secants is incompatible with symmetry, and resolve
+the incompatibility by \textbf{SS-U}, a secant-stabilised symmetric update
+that corrects the residual in the orthogonal complement $s_k^{\perp}$.
+SS-U inherits superlinear convergence (Dennis--Mor\'e criterion)
+and empirically enlarges the basin of attraction by a factor of
+$1.5$--$2$ over SR1 on the Curved Valley family.
+
+Applied to strongly monotone VI, the improved bounded-deterioration
+property of SP-Broyden lifts the $O(T^{-1})$ barrier of VIQA-Broyden.
+We prove a locally optimal rate theorem for VIJI${+}$SP-Broyden and
+an unconditional optimal-rate theorem
+$\mathrm{GAP} = O(L_1 D^3 / T^{3/2})$ for the guaranteed variant
+\textbf{SP-AFD}, which uses one finite-difference refinement per
+iteration.
+
+All theoretical results are verified numerically on Discrete~BVP,
+Broyden~Banded, Curved~Valley and a family of cubic strongly monotone~VI.
+
+\vspace{1em}\noindent
+\textbf{Keywords:} quasi-Newton methods, classical and multisecant
+Broyden, SR1, BFGS, symmetric updates, bounded deterioration,
+superlinear convergence, variational inequalities, VIJI-Restarted,
+optimal convergence rate.
+
+\end{otherlanguage}

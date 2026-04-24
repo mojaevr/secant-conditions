@@ -1,0 +1,52 @@
+# --- LaTeX build artifacts -------------------------------------------------
+*.aux
+*.log
+*.toc
+*.out
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+*.idx
+*.ilg
+*.ind
+*.lof
+*.lot
+*.nav
+*.snm
+*.vrb
+*.xdv
+
+# latexmk / biber / latexindent auxiliaries
+*.bcf
+*.run.xml
+*-blx.bib
+indent.log
+
+# TeXLive transient output of probe runs
+texput.*
+probe*.pdf
+missfont.log
+
+# Backups and working copies of sources
+*.tex.backup
+*.tex.new
+*.cls.orig
+
+# --- OS/IDE -----------------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+.claude/
+
+# --- Python / notebooks ----------------------------------------------------
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+
+# --- Review/internal files (not for public repo) ---------------------------
+REVIEW_TODO.md

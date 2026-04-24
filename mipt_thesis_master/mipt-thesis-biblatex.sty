@@ -1,0 +1,9 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{mipt-thesis-biblatex}[2026/04/21 Stub: plain thebibliography is used, biblatex/biber disabled]
+
+% main.tex использует ручное окружение \begin{thebibliography}...\end{thebibliography},
+% поэтому biblatex и biber здесь не нужны. Оставляем только \printbib для совместимости.
+
+\newcommand{\printbib}{%
+    \addcontentsline{toc}{chapter}{\bibname}%
+}
