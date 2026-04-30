@@ -50,3 +50,5 @@ __pycache__/
 
 # --- Review/internal files (not for public repo) ---------------------------
 REVIEW_TODO.md
+AUDIT_*.md
+CH*_AUDIT_REPORT.txt

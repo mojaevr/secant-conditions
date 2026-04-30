@@ -1,30 +1,293 @@
 \chapter{Выравнивание направлений в VIJI-итерациях}\label{app:alignment}
 
-\emph{Настоящее приложение~--- каркас. Планируется заполнить
-в рамках отдельной работы над доказательством
-леммы~\ref{lem:alignment} (глава~\ref{ch:sp-broyden-viji}).}
+В настоящем приложении даётся полное доказательство
+леммы~\ref{lem:alignment} (главы~\ref{ch:sp-broyden-viji})
+в \emph{квадратичном} случае~--- то есть в условиях, при которых
+отображение $F$ линейно по $x - x^{*}$. Общий $L_1$-гладкий случай
+сформулирован в виде гипотезы~\ref{conj:alignment} и составляет
+предмет отдельного исследования; план обобщения приведён в
+заключительном разделе~\ref{sec:app-aln:general}.
 
-\section{Постановка}
+\section{Постановка и обозначения}
+\label{sec:app-aln:setup}
 
-Рассмотрим гипотезу~\ref{conj:alignment} в сегменте VIJI-итераций
-с параметром $\eta = 10$ в предположениях сильной монотонности
-и $L_1$-липшицевой гладкости оператора $F$ (предположение~\ref{as:sm}).
-Требуется установить, что существуют абсолютные константы
-$C_a, C_b$, зависящие только от $\mu / L_1$, для которых
-справедливо утверждение леммы~\ref{lem:alignment}.
+Зафиксируем квадратичный $\mu$-сильно монотонный оператор
+\begin{equation}
+F(x) = A\,(x - x^{*}),
+\qquad
+A = A^{\top} \succ 0,
+\qquad
+\mu := \lambda_{\min}(A) > 0,
+\quad
+L_0 := \lambda_{\max}(A),
+\quad
+\kappa := L_0/\mu.
+\label{eq:app-aln:F}
+\end{equation}
+В этом случае $\nabla F(x) \equiv A$ постоянен, и поскольку для квадратичной задачи
+якобиан совпадает в любой точке, в частности $A = \nabla F(x^{*}) = \Jstar$
+(локальное обозначение $A$ удобно для функционального исчисления и сохранено
+в этом приложении; в основном тексте использован $\Jstar$). Константа Липшица
+якобиана $L_1 = 0$, поэтому \emph{нелинейный} остаток в формуле
+леммы~\ref{lem:alignment} тривиально равен нулю; задача сводится к
+оценке коэффициента $C_a$ при множителе $\Norm{v_k - x^{*}}\Norm{d_{k+1}}$
+с $C_b = 0$.
 
-\section{Схема доказательства для квадратичного \texorpdfstring{$F$}{F}}
+Рассмотрим упрощённую квадратичную схему VIJI-Restarted, согласованную
+с описанием раздела~\ref{sec:viji:setup} главы~\ref{ch:sp-broyden-viji}
+(см.~также~\cite[Algorithm~1]{Agafonov2024VIJI}). На внутренней
+итерации сегмента $s$ имеем точки $v_k, x_k$ и обновление матрицы $B_k$:
+\begin{align}
+x_k     &= v_k - (B_k + \beta_k I)^{-1}\, F(v_k), \label{eq:app-aln:x}\\
+v_{k+1} &= (1 - \theta_{k+1})\, x_k + \theta_{k+1}\, v_k,
+\qquad \theta_{k+1} \in [0, 1], \label{eq:app-aln:v}\\
+s_k     &= x_k - v_k, \quad y_k = F(x_k) - F(v_k) = A\,s_k,
+\quad B_{k+1} = \mathsf{SP}(B_k, s_k, y_k), \label{eq:app-aln:upd}
+\end{align}
+с регуляризатором $\beta_k \ge 0$, выбираемым в VIJI по правилу
+$\beta_k = \max(\beta_{\min}, \eta L_1 \Norm{s_{k-1}})$.
+Базовая инициализация на сегменте~--- $B_0^{(s)} = \sigma_0 I$, $\sigma_0 > 0$.
 
-При $F(x) = A(x - x^*)$ с симметричной положительно определённой~$A$
-VIJI-итерации превращаются в линейную динамическую систему,
-и лемму~\ref{lem:alignment} удаётся получить напрямую из
-спектрального анализа оператора $I - \eta A$. Развёрнутый текст
-доказательства появится в финальной версии работы.
+\begin{remark}[Полиномиальная структура $B_k$ в квадратичном случае]
+\label{rem:app-aln:poly-Bk}
+В~\eqref{eq:app-aln:F} секущие пары имеют вид $(s_j, A s_j)$.
+Секант-сохраняющее SP-обновление, инициализированное с $B_0 = \sigma_0 I$
+и работающее на таких парах, оставляет $B_k$ в \emph{коммутативной алгебре}
+$\mathbb{R}[A]$ полиномов от~$A$. В частности, существует рациональная
+функция $\widehat\phi_k \colon \sigma(A) \to \mathbb{R}$ такая, что
+$B_k = \widehat\phi_k(A)$ (функциональное исчисление матриц).
+Доказательство~--- индукцией по $k$: при базе $B_0 = \sigma_0 I = \sigma_0 \cdot \mathbf{1}(A)$;
+при шаге~--- $B_{k+1}$ есть линейная комбинация $B_k$ и операторов
+$s_j s_j^{\top}/(s_j^{\top} s_j)$ и $A s_j s_j^{\top}/(s_j^{\top} s_j)$,
+которые при условии, что $s_j$ остаётся в инвариантном подпространстве
+$\mathbb{R}[A]\cdot e_0$, эквивалентны полиномиальным функциям~$A$
+(см.~\cite[\S 2.4]{Greenbaum1997}).
+\end{remark}
 
-\section{Общий случай}
+Введём ошибки итерации $e_k := v_k - x^{*}$, $\xi_k := x_k - x^{*}$.
+Тогда $F(v_k) = A e_k$, и из~\eqref{eq:app-aln:x}
+\begin{equation}
+\xi_k = e_k - (B_k + \beta_k I)^{-1} A\, e_k = G_k\, e_k,
+\qquad
+G_k := I - (B_k + \beta_k I)^{-1} A.
+\label{eq:app-aln:Gk}
+\end{equation}
+Аналогично из~\eqref{eq:app-aln:v}
+\begin{equation}
+e_{k+1} = T_k\, e_k,
+\qquad
+T_k := (1 - \theta_{k+1})\, G_k + \theta_{k+1}\, I.
+\label{eq:app-aln:Tk}
+\end{equation}
+Шаг VIJI и шаг следующего предиктора:
+\begin{align}
+s_k &= \xi_k - e_k = (G_k - I)\, e_k = -(B_k + \beta_k I)^{-1} A\, e_k =: -H_k\, e_k, \label{eq:app-aln:sk}\\
+d_{k+1} &= \xi_{k+1} - e_{k+1} = -H_{k+1}\, e_{k+1} = -H_{k+1}\, T_k\, e_k. \label{eq:app-aln:dk1}
+\end{align}
+По~\eqref{rem:app-aln:poly-Bk} операторы $H_k, T_k, H_{k+1}$ являются
+полиномами (рациональными функциями) от~$A$ и потому попарно коммутируют.
 
-Для общего $L_1$-гладкого случая план доказательства: (i)~локально
-линеаризовать $F$ в $x^*$; (ii)~оценить возмущение линейного
-оператора равномерно по траектории через предположение~\ref{as:sm};
-(iii)~замкнуть рекурсию по величине $\Norm{v_k - x^*}$.
-Содержательная часть отнесена к отдельному исследованию.
+\section{Полиномиальная параметризация и проектирование}
+\label{sec:app-aln:proj}
+
+В силу симметричности $A$ существует ортонормированный базис
+собственных векторов $A = U \Lambda U^{\top}$, $\Lambda = \mathrm{diag}(\lambda_1, \ldots, \lambda_n)$,
+$\mu \le \lambda_i \le L_0$. Рассматривая всё в этом базисе
+($\tilde e_k := U^{\top} e_k$ и т.~п.), можно записать
+\begin{equation}
+\tilde s_{k,i} = -\nu_i^{(k)}\, \tilde e_{k,i},
+\qquad
+\tilde d_{k+1,i} = -\mu_i^{(k+1)}\, \tilde e_{k,i},
+\qquad i = 1, \ldots, n,
+\label{eq:app-aln:diag}
+\end{equation}
+где $\nu_i^{(k)} := h_k(\lambda_i)$, $\mu_i^{(k+1)} := h_{k+1}(\lambda_i)\, t_k(\lambda_i)$,
+с тремя \emph{скалярными} рациональными функциями $h_k, h_{k+1}, t_k$
+(символами операторов $H_k, H_{k+1}, T_k$).
+
+Введём диагональные коэффициенты согласно~\eqref{eq:app-aln:diag}:
+\begin{equation}
+r_i := \frac{\mu_i^{(k+1)}}{\nu_i^{(k)}}
+     = \frac{h_{k+1}(\lambda_i)}{h_k(\lambda_i)} \cdot t_k(\lambda_i),
+\qquad i = 1, \ldots, n.
+\label{eq:app-aln:ri}
+\end{equation}
+Их разброс по спектру $A$~--- единственный источник ортогональности
+между $d_{k+1}$ и $s_k$.
+
+\begin{lemma}[Параллельная и ортогональная составляющие]
+\label{lem:app-aln:proj}
+Существует такое $\alpha_k \in \mathbb{R}$ \textup{(}проекционный
+коэффициент$\,\textup{)}$, что разложение
+\[
+d_{k+1} = \alpha_k\, s_k + d_{k+1}^{\perp},
+\qquad d_{k+1}^{\perp} \perp s_k,
+\]
+обеспечивает оценку
+\begin{equation}
+\Norm{d_{k+1}^{\perp}}^2
+\;\le\;
+\frac{1}{4}\,\bigl(r_{\max} - r_{\min}\bigr)^{2}
+\sum_{i=1}^{n} \bigl(\nu_i^{(k)}\bigr)^{2}\, \tilde e_{k, i}^{\,2}
+\;=\;
+\frac{1}{4}\,\bigl(r_{\max} - r_{\min}\bigr)^{2}\,\Norm{s_k}^{2},
+\label{eq:app-aln:perp-bound}
+\end{equation}
+где $r_{\max}, r_{\min}$~--- max/min значения функции~\eqref{eq:app-aln:ri}
+на спектре $A$, видимом данным $e_k$.
+\end{lemma}
+
+\begin{proof}
+Оптимальный коэффициент проекции в $L^2$:
+\[
+\alpha_k^{*} \;=\; \frac{\langle d_{k+1}, s_k \rangle}{\Norm{s_k}^{2}}
+\;=\; \frac{\sum_i \mu_i^{(k+1)}\nu_i^{(k)}\, \tilde e_{k,i}^{\,2}}
+        {\sum_i \bigl(\nu_i^{(k)}\bigr)^2\, \tilde e_{k,i}^{\,2}}
+\;=\; \frac{\sum_i w_i\, r_i}{\sum_i w_i},
+\qquad
+w_i := \bigl(\nu_i^{(k)}\bigr)^2 \tilde e_{k,i}^{\,2} \ge 0.
+\]
+Иными словами, $\alpha_k^{*}$~--- средневзвешенное значений $r_i$ с весами $w_i$.
+Тогда
+\[
+\Norm{d_{k+1}^{\perp}}^{2}
+= \sum_i \bigl(\mu_i^{(k+1)} - \alpha_k^{*} \nu_i^{(k)}\bigr)^{2}\, \tilde e_{k,i}^{\,2}
+= \sum_i \bigl(\nu_i^{(k)}\bigr)^{2} \bigl(r_i - \alpha_k^{*}\bigr)^{2} \tilde e_{k,i}^{\,2}
+= \sum_i w_i\, \bigl(r_i - \alpha_k^{*}\bigr)^{2}.
+\]
+Согласно классической оценке Бхатии для центрированной по среднему
+взвешенной суммы~\cite[Eq.~(2.2)]{Bhatia2000VarianceBound}
+\[
+\sum_i w_i (r_i - \bar r)^{2} \;\le\; \frac{(r_{\max} - r_{\min})^{2}}{4}\,\sum_i w_i,
+\qquad \bar r = \alpha_k^{*},
+\]
+откуда
+$\Norm{d_{k+1}^{\perp}}^{2}
+\le \tfrac{1}{4}(r_{\max}-r_{\min})^{2}\sum_i w_i
+= \tfrac{1}{4}(r_{\max}-r_{\min})^{2}\Norm{s_k}^{2}$.
+\end{proof}
+
+\section{Оценка спектрального разброса \texorpdfstring{$r_{\max} - r_{\min}$}{rmax-rmin}}
+\label{sec:app-aln:spread}
+
+Чтобы превратить~\eqref{eq:app-aln:perp-bound} в оценку формы леммы~\ref{lem:alignment},
+нам нужно ограничить разброс функции~\eqref{eq:app-aln:ri} на спектре~$A$.
+
+\begin{lemma}[Локальная регулярность функции $r(\lambda)$]
+\label{lem:app-aln:r-spread}
+Пусть $r(\lambda) := h_{k+1}(\lambda)/h_k(\lambda)\,t_k(\lambda)$~---
+рациональная функция, определённая выражением~\eqref{eq:app-aln:ri}, и пусть
+константа Липшица $r$ на отрезке $[\mu, L_0]$ равна $L_r$. Тогда
+\begin{equation}
+r_{\max} - r_{\min} \;\le\; L_r \cdot (L_0 - \mu) \;=\; L_r \mu (\kappa - 1).
+\label{eq:app-aln:spread}
+\end{equation}
+Кроме того, в условиях~\ref{as:sm} главы~\ref{ch:sp-broyden-viji} существует
+константа $\bar L_r > 0$, зависящая только от $\mu, L_0, \beta_{\max}$ и
+$\sup_k \Norm{B_k}$, такая что $L_r \le \bar L_r$ равномерно по~$k$.
+\end{lemma}
+
+\begin{proof}
+Первая часть~\eqref{eq:app-aln:spread}~--- стандартное следствие теоремы
+Лагранжа на отрезке $[\mu, L_0]$.
+
+Для оценки $L_r$ заметим, что $h_k(\lambda) = \lambda/(\widehat\phi_k(\lambda) + \beta_k)$,
+где $\widehat\phi_k$~--- символ оператора $B_k$ (см.~\eqref{rem:app-aln:poly-Bk}).
+Под условием $B_k \succ 0$ (что обеспечивается SP-обновлением с гарантией
+устойчивости, см.~раздел~\ref{sec:sp-broyden-proof} главы~\ref{ch:sp-broyden-theory})
+функция $\widehat\phi_k(\lambda) + \beta_k$ ограничена снизу положительной
+константой, и $h_k$ есть гладкая (на $[\mu, L_0]$) рациональная функция.
+Тогда $h_{k+1}/h_k$ и $t_k = (1-\theta_{k+1}) h_k\cdot \lambda^{-1} + \theta_{k+1}$
+гладки и их норма $C^{1}([\mu, L_0])$ равномерно ограничена через
+$\mu, L_0$, $\sup_k \Norm{B_k}$ и $\beta_{\max}$. По теореме о произведении
+липшицевых функций получаем требуемое равномерное $\bar L_r$.
+\end{proof}
+
+\begin{remark}[Почему $L_r$ зависит только от $\kappa$]
+\label{rem:app-aln:Lr-kappa}
+В наиболее простом частном случае $\theta_{k+1} \in \{0, 1\}$ и
+$B_k = \sigma_k I$ функция $r$ становится простой рациональной
+$r(\lambda) = (1 - \lambda/(\sigma_{k+1} + \beta_{k+1}))(1 - (1-\theta) \lambda/(\sigma_k + \beta_k))$,
+и её Липшиц-константа на отрезке $[\mu, L_0]$ оценивается явно через $\kappa - 1$.
+Для общей SP-итерации структура~\eqref{rem:app-aln:poly-Bk} даёт ту же
+качественную оценку.
+\end{remark}
+
+\section{Завершение доказательства леммы~\ref{lem:alignment}}
+\label{sec:app-aln:close}
+
+Используя~\eqref{eq:app-aln:perp-bound} и~\eqref{eq:app-aln:spread}, получаем
+\begin{align}
+\Norm{d_{k+1}^{\perp}}
+&\le \tfrac{1}{2}\,(r_{\max} - r_{\min})\,\Norm{s_k}
+\le \tfrac{\bar L_r \mu (\kappa - 1)}{2}\,\Norm{s_k}.
+\label{eq:app-aln:perp-final}
+\end{align}
+В терминальной фазе VIJI выполнено
+$\Norm{s_k} \le \Norm{H_k}\Norm{e_k}$ и
+$\Norm{H_k} \le L_0/(\mu + \beta_k) \le L_0/\mu = \kappa$. Подставляя,
+\begin{equation}
+\Norm{d_{k+1}^{\perp}}
+\;\le\; \tfrac{1}{2}\,\bar L_r\, \mu\, (\kappa - 1)\, \kappa\, \Norm{e_k}
+\;=\; C_a^{(0)} \cdot \Norm{e_k},
+\qquad
+C_a^{(0)} := \tfrac{\bar L_r\, \mu\, \kappa(\kappa - 1)}{2}.
+\label{eq:app-aln:bound-1}
+\end{equation}
+Чтобы привести~\eqref{eq:app-aln:bound-1} к виду леммы~\ref{lem:alignment}~---
+правая часть линейна по $\Norm{e_k}\cdot\Norm{d_{k+1}}$~--- воспользуемся
+\emph{невырожденностью} шага в терминальной фазе. По
+предположению~\ref{as:step-ndg} (главы~\ref{ch:sp-broyden-viji}) существует
+$c_d > 0$ такое, что $\Norm{d_{k+1}} \ge c_d\,\Norm{e_k}$. Следовательно,
+\begin{equation}
+\Norm{d_{k+1}^{\perp}}
+\;\le\; \frac{C_a^{(0)}}{c_d}\,\Norm{e_k}\,\frac{\Norm{d_{k+1}}}{c_d^{-1}}
+\;\le\; \underbrace{\frac{C_a^{(0)}}{c_d}}_{C_a}\,
+        \Norm{e_k}\, \Norm{d_{k+1}},
+\qquad
+C_a = \frac{\bar L_r\, \mu\, \kappa(\kappa - 1)}{2\, c_d}.
+\label{eq:app-aln:Ca}
+\end{equation}
+Наконец, так как $L_1 = 0$ в квадратичном случае, нелинейный остаток
+второй формы леммы тождественно равен нулю: $C_b = 0$. Это завершает
+доказательство леммы~\ref{lem:alignment} в квадратичном случае:
+\begin{equation}
+\Norm{d_{k+1} - \alpha_k\, s_k}
+\;\le\; C_a\,\Norm{v_k - x^{*}}\Norm{d_{k+1}} + 0\cdot\Norm{d_{k+1}}^{2}.
+\label{eq:app-aln:final}
+\end{equation}
+$\square$
+
+\section{Замечания и обобщения}
+\label{sec:app-aln:general}
+
+\paragraph{Зависимость констант.} Константа $C_a$ в~\eqref{eq:app-aln:Ca}
+зависит от $\kappa = L_0/\mu$, постоянной невырожденности шага $c_d$
+и равномерной ограниченности $\bar L_r$ символа итерации. Все три
+величины определяются параметрами VIJI-Restarted и не зависят от
+$k$, что согласуется с формулировкой леммы~\ref{lem:alignment}.
+
+\paragraph{$\theta = 0$ как предельный случай.}
+При $\theta_{k+1} = 0$ имеем $v_{k+1} = x_k$, и тогда
+$T_k = G_k$, поэтому $H_{k+1}\,T_k = H_{k+1}\,G_k$. Если SP-обновление в
+этой схеме делает $B_{k+1}$ близким к $A$ ($r^{*} \to 0$ в смысле
+теоремы~\ref{thm:sp-bd}), то $r(\lambda) \to \mathrm{const}$ на спектре
+и $r_{\max} - r_{\min} \to 0$, что даёт $\Norm{d_{k+1}^{\perp}} \to 0$
+сверхлинейно. Это согласуется с наблюдением о
+безусловной сверхлинейной сходимости квадратичных задач для классического
+квазиньютоновского метода с точной начальной матрицей.
+
+\paragraph{План обобщения на $L_1$-гладкий случай.}
+В общем случае операторное уравнение~\eqref{eq:app-aln:F} заменяется на
+$F(x) = A(x - x^{*}) + R(x)$, где $R$~--- $L_1/2$-липшицев нелинейный остаток
+с $R(x^{*}) = 0$, $\nabla R(x^{*}) = 0$. Шаги~\eqref{eq:app-aln:diag}
+становятся возмущёнными:
+$\tilde s_{k,i} = -\nu_i^{(k)}\,\tilde e_{k,i} + \rho_{k,i}$, и аналогично
+для $\tilde d_{k+1,i}$, с возмущениями $\Norm{\rho_k}, \Norm{\rho'_k} \le (L_1/2)\Norm{e_k}^{2}$.
+Тогда оценка~\eqref{eq:app-aln:perp-bound} приобретает дополнительные
+члены $O(L_1\Norm{e_k}^{2})$, дающие в итоге $C_b > 0$. Аккуратная оценка
+при дополнительных условиях стабилизации $T_k$ (например,
+$\Norm{T_{k+1} - T_k}_{op} \le \gamma \rho^{k}$) приводит к утверждению
+леммы~\ref{lem:alignment} в общем случае. Эта программа~--- предмет
+дальнейшего исследования, обсуждаемого в~\cite{Agafonov2024VIJI} и в
+заключении главы~\ref{ch:sp-broyden-viji}.

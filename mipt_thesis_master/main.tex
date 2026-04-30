@@ -17,6 +17,16 @@
 
 \documentclass[oneside]{mipt-thesis-bs}
 
+% --- Шрифты с полной T2A-поддержкой ------------------------------------------
+% Класс mipt-thesis-bs подгружает Computer Modern (cmr), у которого в T2A,
+% PD1 и PU отсутствуют некоторые начертания (m/up и т.п.) — отсюда warning'и
+% «Font shape T2A/cmr/m/up undefined». Latin Modern (lmodern) — drop-in
+% замена CMR с полным набором кодировок: подключаем после класса, чтобы
+% переопределить семейство по умолчанию для всех уже загруженных
+% \DeclareFontEncoding (T1, TS1, T2A, PD1, PU).
+\usepackage{lmodern}
+% -----------------------------------------------------------------------------
+
 \makeatletter
 \let\cleardoublepage\clearpage
 \renewcommand{\addemptypage}{}
@@ -67,6 +77,12 @@
 \usepackage{enumitem}
 
 \geometry{margin=2.5cm}
+% --- fancyhdr: \headheight по умолчанию 12pt мал для itshape-секционных
+% маркеров (\sectionmark с \large\itshape \S\thesection в классе),
+% что даёт warning «\headheight is too small (12.0pt)». Поднимаем до 15pt
+% — достаточно с запасом для полуторного интервала (\onehalfspacing).
+\setlength{\headheight}{15pt}
+\setlength{\topmargin}{-13pt}  % компенсация смещения «вверх» при увеличении headheight
 \hypersetup{colorlinks=true,linkcolor=blue!60!black,citecolor=green!50!black}
 
 %--- Теоремные окружения ---
@@ -75,9 +91,9 @@
 \newtheorem{corollary}[theorem]{Следствие}
 \newtheorem{definition}[theorem]{Определение}
 \newtheorem{remark}[theorem]{Замечание}
-\newtheorem{assumption}{Предположение}
+\newtheorem{assumption}{Предположение}[chapter]
 \newtheorem{conjecture}[theorem]{Гипотеза}
-\newtheorem{proposition}{Утверждение}
+\newtheorem{proposition}{Утверждение}[chapter]
 
 %--- Математические макросы ---
 \newcommand{\RR}{\mathbb{R}}
@@ -154,6 +170,11 @@
 %%  Заключение
 %% ============================================================
 \include{sections/conclusion}
+
+%% ============================================================
+%%  Программная реализация и воспроизводимость
+%% ============================================================
+\include{sections/reproducibility}
 
 %% ============================================================
 %%  Приложения

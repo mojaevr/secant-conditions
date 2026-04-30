@@ -1,0 +1,132 @@
+%% =========================================================================
+%%  Программная реализация и воспроизводимость
+%% =========================================================================
+
+\chapter*{Программная реализация и воспроизводимость}
+\label{ch:reproducibility}
+\addcontentsline{toc}{chapter}{Программная реализация и воспроизводимость}
+
+\section*{Структура репозитория}
+\addcontentsline{toc}{section}{Структура репозитория}
+
+Все эксперименты и исходные тексты диссертации собраны в публичном
+репозитории \texttt{SP-Broyden}.\footnote{Адрес репозитория и команда
+сборки указаны в файле \texttt{README.md} корня проекта; для версии,
+зафиксированной на момент защиты, использован тег \texttt{master-thesis-2026}.}
+Структура каталога:
+\begin{description}\itemsep0pt
+  \item[\texttt{mipt\_thesis\_master/}] \LaTeX-источник диссертации
+        (\texttt{main.tex}, \texttt{sections/}, \texttt{appendix/}),
+        скрипт сборки \texttt{build.sh} (двойной прогон \texttt{pdflatex})
+        и статический проверочный скрипт \texttt{check\_static.py},
+        сверяющий \verb|\cite|/\verb|\bibitem|, \verb|\ref|/\verb|\label|.
+  \item[\texttt{tezisy.ipynb}] эксперименты главы~2 (SP-Broyden на
+        нелинейных системах: тест Broyden, проверка ограниченной
+        деградации $\Fro{B_k - J(x_k)}$).
+  \item[\texttt{basin.ipynb}] эксперименты главы~3 (SS-SR1: бассейн
+        сходимости, скейлинг радиуса по $(\alpha,\beta)$).
+  \item[\texttt{pics.ipynb}] двумерные иллюстрации (Curved Valley,
+        проекция $\Pi_k$, разложение ошибки якобиана).
+  \item[\texttt{run\_seeds.py}] мульти-seed эксперимент главы~4
+        (SP-AFD vs SP-Broyden vs VIQA-Broyden, рисунок
+        \ref{fig:viji_seeds}); сохраняет промежуточные траектории
+        в \texttt{results.npz}.
+\end{description}
+
+\section*{Окружение}
+\addcontentsline{toc}{section}{Окружение}
+
+Эксперименты прогонялись в окружении:
+\begin{itemize}\itemsep0pt
+  \item Python~3.10 (CPython, x86\_64 Linux);
+  \item NumPy~1.26 (линейная алгебра, генератор
+        \texttt{numpy.random.default\_rng}),
+        SciPy~1.11 (только для проверки референсного решения),
+        Matplotlib~3.8 (графики);
+  \item \LaTeX: TeX~Live~2025+ с поддержкой кириллицы (\texttt{babel-russian},
+        \texttt{T2A}-энкодинг, пакет \texttt{mathtext} класса
+        \texttt{mipt-thesis-bs}).
+\end{itemize}
+Для воспроизведения PDF достаточно команды
+\verb|cd mipt_thesis_master && ./build.sh| (двойной \texttt{pdflatex}).
+
+\section*{Случайные числа и seed'ы}
+\addcontentsline{toc}{section}{Случайные числа и seed'ы}
+
+Все случайные величины генерируются исключительно через современный
+интерфейс \texttt{rng = numpy.random.default\_rng(seed)} (PCG64) с
+явно передаваемым целочисленным seed'ом~--- глобальный
+\texttt{numpy.random.seed} не используется, чтобы исключить скрытые
+зависимости между прогонами.
+\begin{itemize}\itemsep0pt
+  \item Генерация задачи (главы~2 и~4):
+        матрица $U$~--- из QR-разложения $\mathcal N(0,1)^{n\times n}$,
+        сдвиг $c\sim\mathcal N(0,0{,}3^2)$, целевой корень $x^{*}$~---
+        $\mathcal N(0,0{,}5^2)$. Дальнейшая нормировка $c$ из условия
+        $F(x^{*})=0$ приведена в \texttt{run\_seeds.py}, функция
+        \texttt{make\_problem}.
+  \item Стартовая точка (главы~2 и~4): $x_0 = x^{*} + \sigma\cdot \mathcal N(0,1)^n$,
+        $\sigma=0{,}3$ для $n=30$ (даёт $\Norm{x_0-x^{*}}\approx 1{,}6$).
+  \item Эксперимент с доверительными интервалами (рис.~\ref{fig:viji_seeds}):
+        seed'ы постановки задачи $\{0,1,\ldots,9\}$, seed'ы стартовой
+        точки $\{1000,\ldots,1009\}$. Полный набор фиксирован в
+        \texttt{run\_seeds.py} (\texttt{SEEDS = list(range(10))}).
+  \item Эксперименты главы~3 (\texttt{basin.ipynb}): seed
+        \texttt{0}~--- сгенерирован один раз для каждой пары
+        $(\alpha,\beta)\in\{10,50,100\}\times\{1,1{,}5,2\}$;
+        вариативность по seed'ам не агрегировалась
+        (см.\ ограничения в \S\ref{sec:viji:discussion}).
+\end{itemize}
+
+\section*{Единый критерий остановки}
+\addcontentsline{toc}{section}{Единый критерий остановки}
+
+Поскольку три класса задач~--- нелинейные системы, безусловная
+оптимизация и сильно монотонные VI~--- допускают разные естественные
+индикаторы сходимости, мы документируем критерии явно. Везде
+численный допуск $\varepsilon_{\mathrm{tol}}=10^{-10}$, максимальное
+число итераций фиксируется в зависимости от метода.
+\begin{itemize}\itemsep0pt
+  \item \textbf{Глава~2 (нелинейные системы $F(x)=0$).}
+        Останов по невязке $\Norm{F(x_k)}_2 \le \varepsilon_{\mathrm{tol}}$.
+        Этот критерий совпадает с критерием класса \texttt{tezisy.ipynb}
+        (строка \verb|tol = 1e-10|).
+  \item \textbf{Глава~3 (минимизация $\min f(x)$).}
+        Останов по норме градиента $\Norm{\nabla f(x_k)}_2 \le \varepsilon_{\mathrm{tol}}$
+        в экспериментах сходимости; для построения бассейна сходимости
+        в \texttt{basin.ipynb} используется радиальный критерий
+        $\Norm{x_k - x^{*}}_2 \le \delta_{\mathrm{basin}}$ (с
+        $\delta_{\mathrm{basin}} = 10^{-6}$ и фиксированным бюджетом
+        итераций), поскольку искомая величина~--- именно радиус,
+        с которого метод сошёлся.
+  \item \textbf{Глава~4 (сильно монотонная VI с оператором~$F$).}
+        В качестве индикатора сходимости используется радиус
+        $\Norm{x_k - x^{*}}_2$ (эталонный корень $x^{*}$ известен из
+        конструкции тестовой задачи: $c$ выбрана так, чтобы $F(x^{*})=0$).
+        Это эквивалентно $\Norm{F(x_k)}_2$ с точностью до константы:
+        из сильной монотонности $\mu\Norm{x_k-x^{*}}_2\le\Norm{F(x_k)}_2\le L_1\Norm{x_k-x^{*}}_2$,
+        откуда оба индикатора пропорциональны радиусу с точностью
+        до $\mathcal O(L_1/\mu)$. На прикладных задачах,
+        где $x^{*}$ не задан явно, в качестве индикатора рекомендуется
+        стандартный gap-функционал
+        $\Phi_R(x)=\sup_{\Norm{y-x}\le R}\langle F(y),x-y\rangle$
+        (см., например, \cite[\S 5]{Agafonov2024VIJI}).
+\end{itemize}
+
+\section*{Соответствие между текстом и ноутбуками}
+\addcontentsline{toc}{section}{Соответствие между текстом и ноутбуками}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Раздел текста & Источник эксперимента \\
+\midrule
+\S\ref{sec:viji:numerics}, рис.~\ref{fig:viji_conv} (одиночный прогон) & \texttt{tezisy.ipynb}, ячейка <<SP-AFD vs SP-Broyden vs VIQA>> \\
+\S\ref{sec:viji:numerics}, рис.~\ref{fig:viji_seeds} (10 seed'ов, IQR) & \texttt{run\_seeds.py} \\
+Глава~2, проверка $\Fro{E_k}=\Fro{B_k - J(x_k)}$ & \texttt{tezisy.ipynb}, ячейка <<bounded deterioration>> \\
+Глава~3, табл.~\ref{tab:radius} (скейлинг $R(\alpha,\beta)$) & \texttt{basin.ipynb}, секция <<scaling>> \\
+Глава~3, бассейн сходимости (рис.~\ref{fig:basin}) & \texttt{basin.ipynb}, секция <<basin>> \\
+Глава~2, 2D-иллюстрации проектора $\Pi_k$ & \texttt{pics.ipynb} \\
+\bottomrule
+\end{tabular}
+\end{center}

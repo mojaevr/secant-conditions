@@ -1,149 +1,148 @@
-# Шаблоны для бакалаврского и магистерского дипломов
+# SP-Broyden — магистерская диссертация
 
-Здесь приведены годные шаблоны для оформления дипломов на кафедре космической физики МФТИ.
+«Исследование глобальных квазиньютоновских методов оптимизации для задач
+математического программирования и вариационных неравенств».
 
-## Авторы
+Автор: Можаев Р. М. (М05-404а), научный руководитель: Камзолов Д. И.,
+Физтех-школа прикладной математики и информатики МФТИ, кафедра проблем
+передачи информации и анализа данных.
 
-* Киселёв А. А.
-* Долгоносов М. С.
-
-## Системные требования
-
-Очевидно, требуется установленный дистрибутив LaTeX. Пакет тестировался с TeX Live 2014 в GNU/Linux при сборке с pdflatex, но должен работать и с достаточно новыми версиями MikTeX на Windows. Предполагается, что в редакторе установлена кодировка UTF-8 (**это важно!**).
-
-## Пример использования
-
-Здесь приведен минимальный пример использования. При возникновении вопросов _обязательно_ прочтите следующие разделы.
-
-`example.tex`
-
-    \documentclass{mipt-thesis-bs}
-    % Следующие две строки нужны только для biblatex. Для inline-библиографии их следует убрать.
-    \usepackage{mipt-thesis-biblatex}
-    \addbibresource{example.bib}
-
-    \title{Изучение мохнатых существ с $\alpha$ Центавра}
-    \author{Сидоров А.\,Б.}
-    \supervisor{Иванов В.\,Г.}
-    %\referee{Петров Д.\,Е.}       % требуется только для mipt-thesis-ms
-    \groupnum{082}
-    \faculty{Факультет проблем физики и энергетики}
-    \department{Кафедра космической физики}
-
-    \begin{document}
-
-    \frontmatter
-    \titlecontents
-
-    \mainmatter
+Основная публикация в работе: Agafonov, Ostroukhov, Mozhaev et al.,
+NeurIPS 2024, [arXiv:2405.15990](https://arxiv.org/abs/2405.15990) (VIJI-Restarted).
 
 
-    \chapter{Введение}
+## Сборка
 
-    Здесь идет текст. Вот так выглядит ссылка на библиографию \cite{langmuir26}. Аналогично добавляются еще главы, внутри них можно объявлять секции с помощью \verb|\section|.
+```sh
+./build.sh
+```
 
+Скрипт прогоняет `pdflatex -interaction=nonstopmode main.tex` дважды (первый
+проход — заполняет `.aux`/`.toc`, второй — устаканивает `\ref`/`\cite`).
+Используется TeX Live 2026 basic; путь к бинарникам зашит как
+`/usr/local/texlive/2026basic/bin/universal-darwin` — при необходимости
+поправьте `build.sh` под свой дистрибутив.
 
-    \backmatter
-
-    \printbib
-    % Следующие строки необходимо раскомментировать, а предыдущую закомментировать, если используется inline-библиография.
-    %\begin{thebibliography}{99}
-    %    \bibitem{langmuir26}
-    %        H. Mott-Smith, I. Langmuir. ``The theory of collectors in gaseous discharges''. \emph{Phys. Rev.} \textbf{28} (1926)
-    %\end{thebibliography}
-
-    \chapter{Благодарности}
-
-    Благодарности идут тут.
-
-    \end{document}
-
-`example.bib`
-
-    @article{langmuir26,
-        author = "Mott-Smith, H. and Langmuir, I.",
-        title = "The theory of collectors in gaseous discharges",
-        journal = "Phys. Rev.",
-        volume = "28",
-        year = "1926",
-        langid = "english"
-    }
+Сборка библиографии встроена в источник (ручной `\begin{thebibliography}`
+в `sections/bibliography.tex`, не biblatex), отдельный прогон `biber` не
+требуется.
 
 
-## Общие замечания
+## Структура исходников
 
-В пакете содержится два класса документа: `mipt-thesis-bs` для бакалаврского и `mipt-thesis-ms` для магистерского дипломов.  В нем учтены все основные требования по оформлению, включать какие-то дополнительные пакеты для корректной работы необязательно. Опционально, при использовании Biblatex, рекомендуется подключить стилевой файл `mipt-thesis-biblatex.sty`.
+```
+mipt_thesis_master/
+├── main.tex                       — корневой файл (преамбула + \include всего)
+├── mipt-thesis-bs.cls             — класс шаблона МФТИ (бакалаврский, переиспользован)
+├── mipt-thesis-biblatex.sty       — сопровождающий стилевик (biblatex не используется)
+├── build.sh                       — двукратный pdflatex
+├── check_static.py                — статическая сверка cite/ref/label
+├── README.md                      — этот файл
+│
+├── sections/
+│   ├── abstract_ru.tex            — аннотация (рус)
+│   ├── abstract_en.tex            — abstract (en)
+│   ├── notation.tex               — список обозначений
+│   ├── introduction.tex           — введение (актуальность, цель, новизна)
+│   ├── literature_review.tex      — обзор литературы
+│   ├── ch1_jacobian.tex           — гл. 1: общая формула обновления якобиана
+│   ├── ch2_sp_broyden.tex         — гл. 2: SP-Broyden, теоремы, эксперименты, L-SP
+│   ├── ch3_symmetric.tex          — гл. 3: SS-SR1, scaling, сравнение QN-методов
+│   ├── ch4_sp_afd.tex             — гл. 4: VIJI-Restarted и SP-AFD
+│   ├── conclusion.tex             — заключение
+│   ├── reproducibility.tex        — программная реализация и воспроизводимость
+│   └── bibliography.tex           — ручной \begin{thebibliography} (48 записей)
+│
+└── appendix/
+    ├── app_alignment.tex          — Лемма 4.3: выравнивание VIJI-итераций
+    └── app_sp_afd_proof.tex       — Теорема 4.8: полное доказательство SP-AFD
+```
 
-## Титульный лист и содержание
+В корне репозитория (`../`) лежат вычислительные ноутбуки, диагностические
+скрипты и сырые результаты; см. ниже.
 
-Для настройки титульного листа нужно вызвать макросы, определяющие название диплома (`\title`), имя автора (`\author`), имя научрука (`\supervisor`), номер группы (`\groupnum`), название факультета и кафедры (`\faculty` и `\department`) и, для магистерского диплома, имя рецензента (`\referee`). Далее для генерации надо вызвать макрос `\titlecontents`.
 
-## Разделы и основной текст
+## Соответствие глав, ноутбуков и скриптов
 
-Класс документа основан на классе `book`, поэтому настоятельно рекомендуется для основных частей использовать `\chapter`, а не `\section`.
+| Глава / раздел | Ноутбук | Скрипт диагностики | Сырые данные | Картинки |
+|---|---|---|---|---|
+| гл. 2 «SP-Broyden»: эксперименты сходимости | `tezisy.ipynb` | `diag_sp_broyden.py` | — | `fig_sp_broyden_conv.pdf`, `fig_sp_broyden_jacerr.pdf`, `fig_sp_broyden_pvar.pdf`, `fig_sp_broyden_cond.pdf` |
+| гл. 2, раздел `sec:highdim` (L-SP-Broyden, $n\le 10^4$) | — | `diag_highdim.py` | `highdim_results.npz` | `fig_highdim_conv.pdf`, `fig_highdim_summary.pdf`, `fig_highdim_pvar.pdf` |
+| гл. 3 «SS-SR1»: 2D-бассейн и радиус сходимости | `basin.ipynb`, `pics.ipynb` | — | — | `fig_basin_polar.pdf`, `fig_radius_vs_beta.pdf`, `fig_scaling.pdf`, `fig_ss_sr1_conv.pdf` |
+| гл. 3, $n\ge 10$ (SS-SR1 vs SR1) | — | `diag_ss_sr1.py` | `ss_sr1_ndim.npz` | `fig_ss_sr1_ndim_conv.pdf`, `fig_ss_sr1_ndim_rpast.pdf`, `fig_ss_sr1_ndim_summary.pdf` |
+| гл. 3, сравнение с BFGS / DFP / PSB / L-BFGS | — | `diag_qn_compare.py` | `qn_compare.npz` | `fig_qn_compare_conv.pdf`, `fig_qn_compare_summary.pdf`, `fig_qn_compare_rpast.pdf` |
+| гл. 3, скейлинг радиуса (`eq:scaling`, bootstrap-CI) | — | `diag_ss_sr1_scaling.py` | `ss_sr1_scaling.npz` | `fig_ss_sr1_scaling.pdf` |
+| гл. 3, табл. 3.1 (CI к аномалии $\alpha=100,\beta=2.0$) | — | `diag_table31_ci.py` | `table31_ci.npz` | `fig_table31_ci.pdf` |
+| гл. 4 «VIJI-Restarted»: основные эксперименты | `pics.ipynb` | `run_seeds.py`, `diag_sp_afd.py` | `results.npz` | `fig_viji_conv.pdf`, `fig_viji_seeds.pdf`, `fig_sp_afd_gap_T.pdf`, `fig_sp_afd_problems.pdf`, `fig_sp_afd_cond14.pdf`, `fig_sp_afd_rstar.pdf` |
+| гл. 4, baseline Anderson($m,\beta$) | — | `diag_anderson.py` | `anderson_baseline.npz` | `fig_anderson_baseline.pdf`, `fig_anderson_summary.pdf` |
 
-С классом документа подгружаются многие полезные пакеты. Например, `esint` -- позволяет записывать интегралы по поверхности и объему при помощи `\oiint` и `\oiiint`, `siunitx` -- удобное использование единиц измерения, углов и больших чисел. Также включены все пакеты AMS и поддержка для индексов в формулах на русском языке.
+Каждый PDF-плот лежит в `mipt_thesis_master/` (рядом с `.tex`-исходниками)
+для прямой подстановки через `\includegraphics`. Сырые `*.npz` — в корне
+репозитория, чтобы не раздувать поддиректорию диссертации.
 
-Шаблон заточен на использование точки в качестве десятичного разделителя. Насколько мне известно, сейчас это стандарт де-факто в русской типографике. Если очень хочется использовать запятые, то рекомендуется загрузить пакет icomma, который выставит правильные отступы.
 
-Для удобства оформления ссылок на рисунки и формулы есть макросы `\formref` (вместо `\ref` для формул) и `\picref` (вместо `\ref` для иллюстраций). Впрочем, обычный макрос `\ref` тоже доступен.
+## Воспроизводимость
 
-## Библиография
+Подробности — в `sections/reproducibility.tex` (включается в финальный PDF).
+Краткий справочник:
 
-Для оформления библиографии можно использовать либо inline-способ, либо biblatex + biber. BibTeX не умеет работать с юникодом, так что он не рекомендуется вовсе к использованию.
+- Python 3.10, NumPy 1.26, SciPy 1.11, Matplotlib 3.8 (TeX Live 2025+).
+- Seed'ы — через `numpy.random.default_rng(seed)` (генератор PCG64),
+  глобальный `np.random.seed` не используется.
+- Единый критерий остановки: $\varepsilon_{\mathrm{tol}}=10^{-10}$,
+  норма зависит от типа задачи (см. таблицу в `reproducibility.tex`).
+- 10 seed'ов на конфигурацию для VIJI-Restarted (`run_seeds.py`),
+  10–50 случайных направлений на точку для радиальных диагностик в гл. 3
+  (`diag_table31_ci.py`, `diag_ss_sr1_scaling.py`).
 
-### Inline-способ
+Запуск любого диагностического скрипта из корня репозитория:
 
-В этом случае в конце документа (как раз перед `\end{document}`) пишется
-следующее:
+```sh
+cd ..
+python diag_sp_broyden.py        # ⇒ fig_sp_broyden_*.pdf в mipt_thesis_master/
+python diag_highdim.py           # ⇒ fig_highdim_*.pdf, highdim_results.npz
+# и т. п.
+```
 
-    \begin{thebibliography}{99}
-    \bibitem{ivanov14}
-        Иванов А. Б. <<Какая-то статья>>. \emph{Журнал каких-то наук}, 1.2 (2014)
 
-    ...
+## Статическая проверка перед сборкой
 
-    \end{thebibliography}
+В `mipt_thesis_master/` лежит `check_static.py` — без TeX-сборки сверяет
+`\cite{...}` ↔ `\bibitem{...}`, `\ref{...}/\eqref{...}` ↔ `\label{...}`,
+ловит дубликаты `\label`. На текущий момент:
 
-Недостаток этого метода -- оформление нужно делать вручную. Преимущество -- нет необходимости устанавливать biber.
+- 48/48 `\cite` ↔ `\bibitem` (с учётом `\cite[opt]{key}`),
+- 0 потерянных `\ref`/`\eqref`,
+- 0 дубликатов `\label`.
 
-### biblatex + biber (рекомендуемый)
+```sh
+cd mipt_thesis_master
+python check_static.py
+```
 
-В этом случае сначала надо установить biber и прописать его в настройках редактора LaTeX ([инструкция для texmaker в Windows](http://tex.stackexchange.com/questions/44040/biblatex-biber-texmaker-miktex#44095)). В командной строке GNU/Linux можно собрать при помощи команды вида `pdflatex example.tex && biber example && pdflatex example.tex`.
 
-Преимущество такого метода -- проще использовать библиографию в нескольких статьях, не задумываясь о ручном оформлении. Недостаток -- необходимо настроить систему для работы с biber.
+## Заметки по сборке (TeX Live 2026)
 
-Библиография пишется в отдельном bib-файле (обычно с таким же названием, что и tex-файл). Обычно в редакторах есть шаблоны записей для biblatex/bibtex, но на всякий случай приведу примеры:
+В преамбуле `main.tex` стоят целевые workaround'ы:
 
-Статья в журнале:
+- `\RequirePackage{etoolbox}` до `\documentclass` — обходит протекание
+  `\globaldefs=1` в LaTeX3-хеши при загрузке класса.
+- Объявление `\c@v@normal`/`\c@v@bold`/`\c@v@italic`/`\c@v@bolditalic`
+  через `\newcount` до загрузки `hyperref` — обходит `pd1enc.def:38`,
+  где `\advance` срабатывает на `\relax`.
+- `\usepackage{lmodern}` — заменяет CMR на Latin Modern с полной
+  поддержкой T2A/T1/TS1/PD1/PU и убирает font shape warning'и.
+- `\setlength{\headheight}{15pt}` — убирает предупреждение `fancyhdr`.
 
-    @article{langmuir26,
-        author = "Mott-Smith, H. and Langmuir, I.",
-        title = "The theory of collectors in gaseous discharges",
-        journal = "Phys. Rev.",
-        volume = "28",
-        year = "1926",
-        langid = "english"
-    }
+`mathtools` не подключён: его v1.31 в TL 2026 падает на собственной
+строке `\EQ_MakeRobust\MT_extended_eqref:n`. Достаточно
+`amsmath`/`amssymb`, которые класс уже подгружает.
 
-Глава из книги:
 
-    @inbook{morse74,
-        author = "Морз, Р.",
-        title = "Бесстолкновительный PIC-метод",
-        booktitle = "Вычислительные методы в физике плазмы",
-        editor = "Олдера, Б. and Фернбаха, С. and Ротенберга, М.",
-        publisher = "М.: Мир",
-        year = 1974,
-        langid = "russian"
-    }
+## Лицензия и происхождение шаблона
 
-Выступление на конференции:
-
-    @conference{kiselyov14_conf,
-        author = "Киселёв, А. А. and Долгоносов М. С. and Красовский В. Л.",
-        title = "Численное моделирование захвата ионов бесстолкновительной плазмы электрическим полем поглощающей сферы",
-        booktitle = "Девятая ежегодная конференция <<Физика плазмы в Солнечной системе>>",
-        year = 2014,
-        langid = "russian"
-    }
+Класс `mipt-thesis-bs` (и сопровождающие `mipt-thesis*.cls`/`.sty`/`.bbx`)
+— шаблон МФТИ для бакалаврских/магистерских дипломов авторства
+А. А. Киселёва и М. С. Долгоносова (см. `LICENSE`). Здесь использован
+с минимальными правками (TL 2026 совместимость, `\onehalfspacing`,
+устранение `\globaldefs=1`).

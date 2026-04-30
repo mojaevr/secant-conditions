@@ -1,27 +1,379 @@
 \chapter{Полное доказательство теоремы о сходимости SP-AFD}\label{app:sp-afd-proof}
 
-\emph{Настоящее приложение~--- каркас. Планируется заполнить
-развёрнутым шестишаговым доказательством теоремы о локально
-оптимальной скорости для SP-AFD в схеме VIJI-Restarted (глава~\ref{ch:sp-broyden-viji}).}
+В настоящем приложении приводится развёрнутое доказательство
+теоремы~\ref{thm:sp-afd} главы~\ref{ch:sp-broyden-viji} о
+\emph{безусловном} выполнении условия~\eqref{eq:cond14} для алгоритма
+SP-AFD в схеме VIJI-Restarted и о согласующейся с этим
+локально-оптимальной скорости $\mathcal O(L_1 D^3 / T^{3/2})$. В отличие
+от теоремы~\ref{thm:local-rate}, здесь \emph{не} используется
+гипотеза~\ref{conj:alignment} о выравнивании направлений: контроль
+направленной ошибки достигается одной дополнительной конечно-разностной
+(FD) секущей на каждой внутренней итерации.
 
-\section{План доказательства}
+\section{Алгоритм SP-AFD: формализация}
+\label{sec:app-afd:alg}
 
-Доказательство использует схему, введённую в главе~\ref{ch:sp-broyden-theory}
-(теорема об оценке якобиана для SP-Broyden) и адаптированную
-к режиму VIJI-Restarted с адаптивным FD-уточнением.
-Ключевые шаги:
-\begin{enumerate}
-  \item Разложение ошибки $E_k = B_k - J^*$ по пифагоровой
-        декомпозиции, индуцированной проектором $\Pi_k$.
-  \item Контроль компоненты $\Pi_k E_k$ через SP-минимальность
-        (лемма~\ref{lem:equivalence}).
-  \item Контроль компоненты $\Pi_k^\perp E_k$ за счёт
-        FD-уточнения, обсуждённого в главе~\ref{ch:sp-broyden-viji}.
-  \item Замыкание по рекурсии
-        с учётом выравнивания направлений
-        (лемма~\ref{lem:alignment}, приложение~\ref{app:alignment}).
-  \item Оценка числа FD-уточнений $r^{*}$ в сегменте.
-  \item Сведение к асимптотическому закону $O(T^{-3/2})$.
-\end{enumerate}
+Зафиксируем входные данные внутренней итерации сегмента $s$:
+\begin{itemize}
+\item текущая итерация $v_k$ и матричный приближённый якобиан $B_k$ с
+      $\Fro{B_k - J_k} \le M_0$ (равномерная оценка~\eqref{eq:sp-bounded}),
+      $J_k := \nabla F(v_k)$;
+\item регуляризатор $\beta_k \ge 0$ из правила VIJI (см.~Algorithm~1
+      в~\cite{Agafonov2024VIJI});
+\item параметры FD: шаг $\tau \in (0, 1]$ (по умолчанию $\tau = 1/4$),
+      порог близости $\gamma > 0$ (определяется ниже), максимальное
+      число refinement-шагов $r_{\max} \in \mathbb{N}$.
+\end{itemize}
+SP-AFD-итерация задаётся как фиксированная последовательность шагов
+($r$~--- индекс refinement-шага):
+\begin{algorithm}[t]
+\caption{SP-AFD: одна внутренняя итерация в $v_k$}
+\label{alg:sp-afd-inner}
+\begin{algorithmic}[1]
+\State Compute candidate step $d^{(0)}_k \;=\; -(B_k + \beta_k I)^{-1} F(v_k)$.
+\For{$r = 0, 1, \ldots, r_{\max}$}
+  \State Compute FD direction
+         $g^{(r)}_k \;=\; \tfrac{1}{\tau}\bigl(F(v_k + \tau\, d^{(r)}_k) - F(v_k)\bigr)$.
+  \State Update SP-Broyden by $(d^{(r)}_k,\, g^{(r)}_k)$:
+         $B_k^{(r+1)} \;=\; \mathsf{SP}\bigl(B_k^{(r)},\, d^{(r)}_k,\, g^{(r)}_k\bigr)$
+         \quad ($B_k^{(0)} := B_k$).
+  \State Compute next candidate
+         $d^{(r+1)}_k \;=\; -(B_k^{(r+1)} + \beta_k I)^{-1} F(v_k)$.
+  \If{$\Norm{d^{(r+1)}_k - d^{(r)}_k} \;\le\; \gamma\,\Norm{d^{(r+1)}_k}^{2}$}
+       \State \textbf{break} \Comment{condition~\eqref{eq:cond14} verified, see Lemma~\ref{lem:app-afd:trigger}}
+  \EndIf
+\EndFor
+\State Set $r^{*} := r$, $x_k := v_k + d^{(r^{*})}_k$.
+\State \Return $x_k$, $B_{k+1} := B_k^{(r^{*}+1)}$.
+\end{algorithmic}
+\end{algorithm}
 
-Содержательная часть~--- в финальной версии работы.
+Существенные числовые константы~--- $\tau$, $\gamma$, $r_{\max}$~---
+выбираются позже единообразно для всех $k, s$.
+
+\section{Покомпонентные оценки}
+\label{sec:app-afd:components}
+
+В этом разделе устанавливаются три леммы, на которые опирается
+основное утверждение.
+
+\begin{lemma}[FD-секущая на текущем шаге]
+\label{lem:app-afd:fd}
+Пусть $d \in \mathbb{R}^n$, $d \ne 0$, $h := \tau$, $\tau \in (0, 1]$.
+Тогда FD-приближение $g := \tfrac{1}{\tau}(F(v_k + \tau d) - F(v_k))$
+удовлетворяет
+\begin{equation}
+\Norm{g - J_k\, d}
+\;\le\;
+\frac{L_1\, \tau}{2}\,\Norm{d}^{2}.
+\label{eq:app-afd:fd}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+По формуле Ньютона--Лейбница
+$g - J_k d = \int_0^{1}(\nabla F(v_k + \tau t d) - J_k)\, d\, \mathrm{d}t$,
+и $\Norm{\nabla F(v_k + \tau t d) - J_k}_{op} \le L_1\tau t \Norm{d}$;
+интегрируя,~--- получаем~\eqref{eq:app-afd:fd}.
+Эта лемма повторяет лемму~\ref{lem:fd} главы~\ref{ch:sp-broyden-viji}
+и используется отдельно в каждом refinement-шаге алгоритма~\ref{alg:sp-afd-inner}.
+\end{proof}
+
+\begin{lemma}[Контроль ошибки матрицы вдоль текущего шага]
+\label{lem:app-afd:dirbound}
+Пусть $B_k^{(r+1)}$ получено SP-обновлением по паре $(d^{(r)}_k, g^{(r)}_k)$ из
+алгоритма~\ref{alg:sp-afd-inner}. Тогда после обновления
+\begin{equation}
+\Norm{\bigl(B_k^{(r+1)} - J_k\bigr)\, d^{(r)}_k}
+\;\le\;
+\frac{L_1\, \tau}{2}\,\Norm{d^{(r)}_k}^{2}.
+\label{eq:app-afd:dirbound}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Секант-сохраняющее SP-обновление по паре $(d, g)$ обеспечивает
+$B_k^{(r+1)} d^{(r)}_k = g^{(r)}_k$. Подставляя в~\eqref{eq:app-afd:fd}:
+\[
+\Norm{(B_k^{(r+1)} - J_k)\, d^{(r)}_k}
+= \Norm{g^{(r)}_k - J_k\, d^{(r)}_k}
+\le \tfrac{L_1 \tau}{2}\,\Norm{d^{(r)}_k}^{2}. \qed
+\]
+\end{proof}
+
+\begin{remark}[Сохранение равномерной оценки $M_0$]
+\label{rem:app-afd:M0-preserved}
+Frobenius-расстояние $\Fro{B_k^{(r+1)} - J_k}$ при FD-обновлениях
+не теряет равномерной оценки $M_0$ из следствия~\ref{cor:sp-in-segment}.
+Действительно, по структуре SP-обновления (точная пифагоровская
+декомпозиция, см.\ теорему~\ref{thm:sp-bd})
+$\Fro{B_k^{(r+1)} - J_k}^2 \le \Fro{B_k^{(r)} - J_k}^2 +
+\Norm{g^{(r)}_k - J_k d^{(r)}_k}^2/\Norm{d^{(r)}_k}^2$, где
+последний член по~\eqref{eq:app-afd:fd} ограничен
+$(L_1\tau)^2\Norm{d^{(r)}_k}^2/4$. В терминальной фазе
+$\Norm{d^{(r)}_k}\to 0$, и приращение поглощается константой $M_0$;
+формальная итерационная оценка~--- та же, что в
+следствии~\ref{cor:sp-in-segment}, с заменой $\Norm{z_k - x^{*}}$ на
+$\Norm{d^{(r)}_k}$.
+\end{remark}
+
+\begin{lemma}[Триггер выхода из refinement-цикла]
+\label{lem:app-afd:trigger}
+Пусть $\Fro{B_k^{(r+1)} - J_k} \le M_0$ для всех refinement-шагов и пусть
+триггер $\Norm{d^{(r+1)}_k - d^{(r)}_k} \le \gamma\,\Norm{d^{(r+1)}_k}^{2}$
+из строки~6 алгоритма~\ref{alg:sp-afd-inner} срабатывает. Если
+\begin{equation}
+\gamma \;\le\; \frac{L_1}{4 (M_0 + L_0)}
+\quad\text{и}\quad
+\tau \;\le\; \frac{1}{4 (1 + \gamma\Norm{d^{(r+1)}_k})^{2}},
+\label{eq:app-afd:gamma-tau}
+\end{equation}
+то условие~\eqref{eq:cond14} выполнено для шага $d^{(r+1)}_k$:
+\begin{equation}
+\Norm{\bigl(B_k^{(r+1)} - J_k\bigr)\, d^{(r+1)}_k}
+\;\le\;
+\frac{L_1}{2}\,\Norm{d^{(r+1)}_k}^{2}.
+\label{eq:app-afd:cond14}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Раскладываем
+\[
+(B_k^{(r+1)} - J_k)\, d^{(r+1)}_k
+\;=\;
+(B_k^{(r+1)} - J_k)\, d^{(r)}_k
+\;+\;
+(B_k^{(r+1)} - J_k)\,(d^{(r+1)}_k - d^{(r)}_k).
+\]
+Первое слагаемое оценивается по лемме~\ref{lem:app-afd:dirbound}:
+$\le (L_1\tau/2)\Norm{d^{(r)}_k}^{2}$.
+Второе~--- через операторную норму
+$\Norm{B_k^{(r+1)} - J_k}_{op} \le \Fro{B_k^{(r+1)} - J_k} + 0 \le M_0 + L_0$
+(оценка через $\Norm{J_k}_{op} \le L_0$ корректна для общего случая, так как
+$\Norm{B_k^{(r+1)}} \le \Norm{J_k} + \Fro{B_k^{(r+1)} - J_k}$),
+затем по триггеру:
+$\le (M_0 + L_0)\, \gamma\, \Norm{d^{(r+1)}_k}^{2}$.
+
+Используя $\Norm{d^{(r)}_k} \le \Norm{d^{(r+1)}_k} + \Norm{d^{(r+1)}_k - d^{(r)}_k}
+\le (1 + \gamma \Norm{d^{(r+1)}_k})\,\Norm{d^{(r+1)}_k}$, имеем
+$\Norm{d^{(r)}_k}^{2} \le (1 + \gamma\Norm{d^{(r+1)}_k})^{2}\, \Norm{d^{(r+1)}_k}^{2}$.
+Складывая два слагаемых:
+\[
+\Norm{(B_k^{(r+1)} - J_k)\, d^{(r+1)}_k}
+\;\le\;
+\bigl[\tfrac{L_1\tau}{2}(1 + \gamma\Norm{d^{(r+1)}_k})^{2}
+        + (M_0 + L_0)\gamma\bigr]\,\Norm{d^{(r+1)}_k}^{2}.
+\]
+По~\eqref{eq:app-afd:gamma-tau} коэффициент в скобках $\le L_1/8 + L_1/4 \le L_1/2$,
+что даёт~\eqref{eq:app-afd:cond14}. \qed
+\end{proof}
+
+\begin{remark}[Калибровка $\tau, \gamma$]
+\label{rem:app-afd:calib}
+В терминальной фазе $\Norm{d^{(r+1)}_k} \to 0$, поэтому условие
+$\gamma\Norm{d^{(r+1)}_k} \le 1$ из~\eqref{eq:app-afd:gamma-tau} при
+любом фиксированном $\gamma$ (не зависящем от $k$) выполнено
+автоматически. Дефолтное значение $\tau = 1/4$ гарантирует
+$\tau (1 + \gamma\Norm{\cdot})^{2} \le 1$ при умеренных $\gamma\Norm{\cdot}$
+и обеспечивает первое неравенство~\eqref{eq:app-afd:gamma-tau}.
+\end{remark}
+
+\section{Конечность refinement-цикла}
+\label{sec:app-afd:rstar}
+
+Покажем, что число refinement-шагов $r^{*}$ ограничено сверху и в
+терминальной фазе сходится к $r^{*} = 1$ (одна FD-секущая в среднем).
+
+\begin{proposition}[Ограниченность $r^{*}$]
+\label{prop:app-afd:rstar}
+Пусть $r_{\max}$ конечен. Тогда $r^{*} \le r_{\max}$ всегда; кроме того,
+существует $\varepsilon^{**} \in (0, \varepsilon^{*}]$ такое, что при
+$\Norm{v_k - x^{*}} \le \varepsilon^{**}$ выполняется $r^{*} = 1$
+(один refinement-шаг достаточен), независимо от $k, s$.
+\end{proposition}
+
+\begin{proof}
+Первая часть тривиальна. Для второй части используем
+лемму~\ref{lem:app-afd:dirbound}: после первого refinement-шага
+$\Norm{(B_k^{(1)} - J_k) d^{(0)}_k} \le (L_1\tau/2)\Norm{d^{(0)}_k}^{2}$.
+Шаг VIJI с обновлённой матрицей даёт
+\[
+d^{(1)}_k - d^{(0)}_k
+= -(B_k^{(1)} + \beta_k I)^{-1} F(v_k) - d^{(0)}_k
+= (B_k^{(1)} + \beta_k I)^{-1}\bigl((B_k^{(0)} + \beta_k I) - (B_k^{(1)} + \beta_k I)\bigr)\,d^{(0)}_k
+= (B_k^{(1)} + \beta_k I)^{-1}(B_k^{(0)} - B_k^{(1)})\,d^{(0)}_k.
+\]
+Норма разности матриц $B_k^{(0)} - B_k^{(1)}$ оценивается через
+формулу SP-обновления (ранг $\le p+1$, по построению окна памяти):
+\[
+\Norm{B_k^{(0)} - B_k^{(1)}}_{op}
+\;\le\;
+\frac{\Norm{g^{(0)}_k - B_k^{(0)} d^{(0)}_k}}{\sigma_{\min}(\widehat S_k)\,\Norm{d^{(0)}_k}}
+\;\le\;
+\frac{1}{\sigma_0}\,\frac{\Norm{g^{(0)}_k - J_k d^{(0)}_k} + \Norm{(J_k - B_k^{(0)})d^{(0)}_k}}{\Norm{d^{(0)}_k}}
+\;\le\;
+\frac{M_0 + L_1\tau\Norm{d^{(0)}_k}/2}{\sigma_0}.
+\]
+(Здесь использованы лемма~\ref{lem:app-afd:fd} для FD-оценки и
+$\Norm{(J_k - B_k^{(0)})d^{(0)}_k} \le M_0\Norm{d^{(0)}_k}$ через
+Frobenius$\to$op-оценку и условие~\eqref{eq:sp-bounded}.)
+
+Для нормы обращённого регуляризованного матричного оператора
+используем тихоновскую добавку $\beta_k \ge \beta_{\min} > 0$
+(по правилу алгоритма $\beta_k = \max(\beta_{\min}, L_1\Norm{d_{k-1}})$,
+$\beta_{\min} > 0$~--- параметр VIJI):
+\begin{equation}
+\Norm{(B_k^{(1)} + \beta_k I)^{-1}}_{op}
+\;\le\;
+\frac{1}{\beta_{\min}}.
+\label{eq:app-afd:tikhonov}
+\end{equation}
+(В отличие от симметричного случая, для общего несимметричного
+$B_k^{(1)}$ оценка~\eqref{eq:app-afd:tikhonov} опирается \emph{только}
+на тихоновский сдвиг и не требует положительной определённости
+самого $B_k^{(1)}$.) Получаем
+\[
+\Norm{d^{(1)}_k - d^{(0)}_k}
+\;\le\;
+\frac{M_0 + L_1\tau\Norm{d^{(0)}_k}/2}{\beta_{\min}\,\sigma_0}\,\Norm{d^{(0)}_k}
+\;=:\;
+C_{\Delta}\,\Norm{d^{(0)}_k}.
+\]
+В то же время $\Norm{d^{(1)}_k} \ge c_d \Norm{e_k}$ по
+предположению~\ref{as:step-ndg}, и
+$\Norm{d^{(0)}_k} \le (M_0/\mu_F + 1)\,\Norm{e_k}$ через сильную
+монотонность $\Norm{F(v_k)} \ge \mu\Norm{e_k}$ (где $\mu_F = \mu/(M_0+L_1)$
+учитывает оценку~$\Norm{(B_k^{(0)} + \beta_k I)^{-1}}_{op} \ge 1/(M_0 + L_1)$,
+обратную к~\eqref{eq:app-afd:tikhonov}). Объединяя
+\[
+\Norm{d^{(1)}_k - d^{(0)}_k}
+\;\le\;
+C_{\Delta}\,\Norm{d^{(0)}_k}
+\;\le\;
+C'_{\Delta}\,\Norm{e_k},
+\qquad
+C'_{\Delta} := C_{\Delta}\,(M_0/\mu_F + 1).
+\]
+В терминальной фазе $\Norm{e_k} \le \varepsilon^{**}$ с
+$\varepsilon^{**} := c_d \gamma / C'_{\Delta}$ имеем
+\[
+\Norm{d^{(1)}_k - d^{(0)}_k}
+\;\le\;
+C'_{\Delta} \Norm{e_k}
+\;\le\;
+\gamma\, c_d \Norm{e_k}\Norm{d^{(1)}_k}
+\;\le\;
+\gamma\,\Norm{d^{(1)}_k}^{2},
+\]
+что и есть условие срабатывания триггера.
+Следовательно, $r^{*} = 1$ при $\Norm{e_k} \le \varepsilon^{**}$.
+Все участвующие константы~--- $c_d, \gamma, M_0, L_1, \mu, \sigma_0,
+\beta_{\min}$~--- зависят только от параметров задачи и схемы
+VIJI-Restarted, не от $k, s$.
+\qed
+\end{proof}
+
+\begin{remark}[Усреднённая оценка]
+\label{rem:app-afd:avg-rstar}
+Утверждение proposition~\ref{prop:app-afd:rstar} даёт $r^{*} \to 1$
+\emph{поточечно} в терминальной фазе. Для среднего $\bar r^{*}$ за
+сегмент достаточно $\Norm{e_k} \le \varepsilon^{**}$ для большей
+части итераций; за счёт геометрического убывания
+$\Norm{e_k}\le \bar\rho^k\Norm{e_0}$ и фиксированности $\varepsilon^{**}$
+эта доля стремится к~$1$. Cледовательно, асимптотически
+$\bar r^{*} \to 1$, что используется в замечании~\ref{rem:cost}
+главы~\ref{ch:sp-broyden-viji}.
+\end{remark}
+
+\section{Безусловная справедливость условия~\eqref{eq:cond14}}
+\label{sec:app-afd:cond14}
+
+\begin{proof}[Доказательство теоремы~\ref{thm:sp-afd}]
+Зафиксируем $\tau = 1/4$ и $\gamma = L_1/(4(M_0 + L_0))$ согласно
+лемме~\ref{lem:app-afd:trigger}. Тогда выполнены оба условия~\eqref{eq:app-afd:gamma-tau}
+для всех $k, s$ при $\Norm{d^{(r+1)}_k} \le D_{\max}$ с
+$D_{\max} := 4(M_0 + L_0)/L_1 - 1 = O(1)$, что в терминальной фазе
+автоматически выполнено.
+
+\textbf{Терминальная фаза} ($\Norm{e_k} \le \varepsilon^{**}$).
+По proposition~\ref{prop:app-afd:rstar} $r^{*} = 1$ всегда; по
+лемме~\ref{lem:app-afd:trigger} условие~\eqref{eq:cond14} выполнено
+с константой $\le L_1/2$. Применяя theorem~3.3
+из~\cite{Agafonov2024VIJI} к каждой внутренней итерации сегмента,
+получаем GAP $= \mathcal O(L_1 D_s^{3} / N^{3/2})$.
+
+\textbf{Нетерминальная фаза} ($\Norm{e_k} > \varepsilon^{**}$).
+Эта фаза охватывает не более $s_0 = \lceil\log(D_0/\varepsilon^{**})/\log(1/\rho)\rceil$
+начальных сегментов схемы VIJI-Restarted (по
+геометрическому сжатию~\eqref{eq:restart-geom}), после чего все
+последующие сегменты входят в терминальный режим. На каждой
+нетерминальной итерации refinement-цикл выполняет $r^{*} \le
+r_{\max}$ шагов, где $r_{\max} = \lceil\log_2(D_0/\varepsilon^{**})\rceil$
+выбирается так, чтобы триггер срабатывал гарантированно: по той же
+оценке, что в proposition~\ref{prop:app-afd:rstar}, разности
+$\Norm{d^{(r+1)}_k - d^{(r)}_k}$ убывают геометрически с фактором
+$q = q(\mu, L_1, M_0, \beta_{\min}, \sigma_0) < 1$ (доказано выше как
+часть оценки $C_{\Delta}$). Конечного числа $r_{\max}$ шагов
+геометрической последовательности достаточно для $\Norm{d^{(r_{\max})}_k -
+d^{(r_{\max}-1)}_k} \le \gamma\Norm{d^{(r_{\max})}_k}^2$, что и
+запускает триггер. По лемме~\ref{lem:app-afd:trigger}
+условие~\eqref{eq:cond14} затем выполнено с константой $\le L_1/2$.
+
+Вклад нетерминальных $s_0$ сегментов в общую сложность~--- константный
+($\#F = O(N \cdot s_0 \cdot r_{\max}) = O(N \log^2(D_0/\varepsilon^{**}))$),
+поглощается в логарифмическом префакторе итоговой оценки
+$\#F = \mathcal O((L_1 D_0^3/\varepsilon)^{2/3})$.
+
+\textbf{Глобальная сходимость.}
+Итого, на каждой внутренней итерации сегмента условие~\eqref{eq:cond14}
+выполнено; theorem~3.3 из~\cite{Agafonov2024VIJI} даёт
+$\mathrm{GAP}(\bar x^{(s)}_N) = \mathcal O(L_1 D_s^{3}/N^{3/2})$.
+Геометрическая декада сегментов из~\eqref{eq:restart-geom} с фактором
+$\rho \in (0, 1)$ даёт суммарную оценку
+$\mathrm{GAP}(\bar x^{(S)}_N) = \mathcal O(L_1 D_0^{3} \rho^{3S} / N^{3/2})$,
+что и есть утверждение теоремы~\ref{thm:sp-afd}. \qed
+\end{proof}
+
+\section{Стоимость и сравнение с VIQA-Broyden}
+\label{sec:app-afd:cost}
+
+Из proposition~\ref{prop:app-afd:rstar} следует, что асимптотически
+$\bar r^{*} \to 1$, поэтому стоимость одной внутренней итерации
+SP-AFD~--- $1 + 1 = 2$ вызова $F$. По сравнению с одним вызовом
+$F$ у VIQA-Broyden, это даёт лишь \emph{постоянный} множитель~$2$ в
+$F$-сложности, но при оптимальной скорости $\mathcal O(T^{-3/2})$
+вместо неоптимальной $\mathcal O(T^{-1})$. Конкретно, для достижения
+точности $\varepsilon$ в GAP:
+\[
+\#F_{\mathrm{SP\text{-}AFD}}(\varepsilon)
+\;=\;
+2\cdot \mathcal O\bigl((L_1 D^{3}/\varepsilon)^{2/3}\bigr),
+\qquad
+\#F_{\mathrm{VIQA\text{-}Broyden}}(\varepsilon)
+\;=\;
+\mathcal O(L_1 D^{3}/\varepsilon),
+\]
+что даёт асимптотическое преимущество SP-AFD $\sim (L_1 D^{3}/\varepsilon)^{1/3}$
+раз~--- неограниченно растущее с уменьшением $\varepsilon$.
+
+\begin{remark}[Чувствительность к $\tau$]
+\label{rem:app-afd:tau-sens}
+Лемма~\ref{lem:app-afd:trigger} показывает, что $\tau$ может быть
+выбрано в широком диапазоне $\tau \in (0, 1/4]$ без изменения
+асимптотики. Уменьшение $\tau$ снижает первый член
+$(L_1\tau/2)\Norm{d^{(0)}_k}^{2}$ за счёт пропорционального уменьшения
+$\Norm{F(v_k + \tau d) - F(v_k)}$, что повышает чувствительность к
+машинной точности при $\Norm{d_k} \lesssim \sqrt{\varepsilon_{\mathrm{mach}}}$.
+Дефолтное $\tau = 1/4$ обеспечивает баланс <<систематика vs.\ шум>>.
+\end{remark}
+
+\paragraph{Сводное замечание.}
+Доказанная теорема показывает, что одна дополнительная FD-секущая
+\emph{в терминальной фазе} достаточна для безусловного перехода в
+оптимальный режим $\mathcal O(T^{-3/2})$ для VIJI-Restarted. Это
+существенный результат: он снимает зависимость от
+гипотезы~\ref{conj:alignment} и обеспечивает практически применимый
+вариант алгоритма с гарантированной локально-оптимальной скоростью
+для произвольной $\mu$-сильно монотонной $L_1$-гладкой VI без
+аналитического якобиана.

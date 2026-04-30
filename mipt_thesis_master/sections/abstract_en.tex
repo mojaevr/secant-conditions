@@ -22,11 +22,16 @@ multisecant updates. Inside this family we construct
 recent secant conditions via the choice
 $v_k^{*} = S_p G_p^{-1} e_1$, where $G_p = S_p^{\top} S_p$
 is the window Gram matrix. We prove a Frobenius-minimality theorem
-and an \emph{improved bounded-deterioration} bound
-$\|E_{k+1}\|_F^2 \le \|E_k\|_F^2
-   + O\!\bigl(\sigma_{\min}^{-2}(S_p)\sum_j \|x_j-x^{*}\|^2 \|s_j\|^2\bigr)$,
-i.e.\ the increment is \emph{quadratic} in the distance to the solution
-rather than linear.
+and a bounded-deterioration theorem with an \emph{enlarged projector}:
+the exact decomposition
+$\|E_{k+1}\|_F^2 = \|E_k\|_F^2 - \|E_k\Pi_k\|_F^2 + \Delta_k$
+holds with a projector $\Pi_k$ of rank $p{+}1$ (compared to rank 1 for
+classical Broyden) and increment
+$\Delta_k = O\!\bigl(\sigma_{\min}^{-2}(S_p)\sum_j \|x_j-x^{*}\|^2 \|s_j\|^2\bigr)$.
+We further establish the strict inequality
+$\|E_k\Pi_k\|_F^2 \ge \|E_k s_k\|^2/\|s_k\|^2$: at every step
+the negative term removes \emph{at least as much} information from the
+error matrix as classical Broyden does.
 
 For the symmetric case we prove an incompatibility theorem stating that
 preserving all past secants is incompatible with symmetry, and resolve
@@ -36,8 +41,9 @@ SS-U inherits superlinear convergence (Dennis--Mor\'e criterion)
 and empirically enlarges the basin of attraction by a factor of
 $1.5$--$2$ over SR1 on the Curved Valley family.
 
-Applied to strongly monotone VI, the improved bounded-deterioration
-property of SP-Broyden lifts the $O(T^{-1})$ barrier of VIQA-Broyden.
+Applied to strongly monotone VI, the rank-$(p{+}1)$ projector of
+SP-Broyden's bounded deterioration together with preservation of
+$p{+}1$ secant conditions lifts the $O(T^{-1})$ barrier of VIQA-Broyden.
 We prove a locally optimal rate theorem for VIJI${+}$SP-Broyden and
 an unconditional optimal-rate theorem
 $\mathrm{GAP} = O(L_1 D^3 / T^{3/2})$ for the guaranteed variant
