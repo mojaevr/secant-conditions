@@ -18,16 +18,28 @@
 \documentclass[oneside]{mipt-thesis-bs}
 
 % --- Шрифты с полной T2A-поддержкой ------------------------------------------
-% Класс mipt-thesis-bs подгружает Computer Modern (cmr), у которого в T2A,
-% PD1 и PU отсутствуют некоторые начертания (m/up и т.п.) — отсюда warning'и
-% «Font shape T2A/cmr/m/up undefined». Latin Modern (lmodern) — drop-in
-% замена CMR с полным набором кодировок: подключаем после класса, чтобы
-% переопределить семейство по умолчанию для всех уже загруженных
-% \DeclareFontEncoding (T1, TS1, T2A, PD1, PU).
-\usepackage{lmodern}
+% Класс mipt-thesis-bs подгружает Computer Modern (cmr) через mathtext.sty.
+% У базовой Type 3 версии CMR в T2A отсутствуют bold/italic начертания
+% кириллицы — \bfseries/\itshape для русского fall-back'ятся на medium
+% upright. Лекарство: пакет cm-super, который содержит Type 1 версии
+% CMR со всеми T2A-shapes (m/it, bx/n, bx/it и т.д.). Его достаточно
+% иметь *установленным* в TL — TeX сам подхватит .pfb-файлы автоматически
+% через map cm-super.map; явного \usepackage не требуется.
+%
+% Если cm-super отсутствует в дистрибутиве, сборка пройдёт без ошибок,
+% но bold/italic русских символов останутся обычными. Установка:
+%   sudo tlmgr install cm-super
 % -----------------------------------------------------------------------------
 
+% --- Принудительное oneside: класс mipt-thesis-bs делает
+% \LoadClass[a4paper,12pt]{book} без \LoadClassWithOptions, поэтому опция
+% [oneside] из \documentclass до book не доходит и работает дефолт book —
+% twoside. Тогда geometry трактует left/right как inner/outer и зеркалит
+% поля на чётных страницах. Сбрасываем флаги двусторонней вёрстки;
+% дополнительно отключаем twoside в самом geometry ниже (см. \geometry).
 \makeatletter
+\@twosidefalse
+\@mparswitchfalse
 \let\cleardoublepage\clearpage
 \renewcommand{\addemptypage}{}
 \makeatother
@@ -60,6 +72,32 @@
 \usepackage[noend]{algpseudocode}
 \usepackage{booktabs}
 
+% --- Окружение breakablealgorithm: не-float версия algorithm, которая
+% --- разрешает разрыв страниц (стандартный приём, см. tex.stackexchange
+% --- /a/100954). Сохраняет нумерацию через counter algorithm и заголовок
+% --- через \caption. Применяется к длинным алгоритмам (SP-Broyden,
+% --- SS-SR1), которые не помещаются на одной странице.
+\makeatletter
+\newenvironment{breakablealgorithm}
+  {% \begin{breakablealgorithm}
+   \begin{center}
+     \refstepcounter{algorithm}%
+     \hrule height.8pt depth0pt \kern2pt
+     \renewcommand{\caption}[2][\relax]{%
+       {\raggedright\textbf{\ALG@name~\thealgorithm} ##2\par}%
+       \ifx\relax##1\relax
+         \addcontentsline{loa}{algorithm}{\protect\numberline{\thealgorithm}##2}%
+       \else
+         \addcontentsline{loa}{algorithm}{\protect\numberline{\thealgorithm}##1}%
+       \fi
+       \kern2pt\hrule\kern2pt
+     }
+  }{%
+     \kern2pt\hrule\relax
+   \end{center}
+  }
+\makeatother
+
 % --- TL 2026 workaround для hyperref.sty:8303 ---------------------------------
 % В hyperref 7.01p (TL 2026) строка 8303 вместо \providecommand* по ошибке
 % использует \newcommand*{\footnoteautorefname}{\footnoteautorefname}. Команда
@@ -76,24 +114,130 @@
 \usepackage{xcolor}
 \usepackage{enumitem}
 
-\geometry{margin=2.5cm}
-% --- fancyhdr: \headheight по умолчанию 12pt мал для itshape-секционных
-% маркеров (\sectionmark с \large\itshape \S\thesection в классе),
-% что даёт warning «\headheight is too small (12.0pt)». Поднимаем до 15pt
-% — достаточно с запасом для полуторного интервала (\onehalfspacing).
-\setlength{\headheight}{15pt}
-\setlength{\topmargin}{-13pt}  % компенсация смещения «вверх» при увеличении headheight
+% --- microtype: только protrusion (вынос пунктуации на поля).
+% --- Font expansion в TL 2026 c текущей упаковкой Latin Modern падает с
+% ---   "auto expansion is only possible with scalable fonts"
+% --- (lmodern Type 1 без полной .pfb-конфигурации под expansion). Отключаем
+% --- expansion явно; protrusion работает со всеми Type 1 шрифтами и даёт
+% --- основной эффект для устранения overfull hbox в русской вёрстке.
+\usepackage[protrusion=true,expansion=false]{microtype}
+
+% --- emergencystretch: TeX в третьем (аварийном) проходе разбиения на
+% --- строки разрешает дополнительное растяжение пробелов до 3em. Это
+% --- предотвращает вылет слов за правое поле, когда в абзаце нет
+% --- хорошего места для переноса. 3em — умеренное значение, не делает
+% --- строки заметно рыхлыми.
+\setlength{\emergencystretch}{3em}
+
+% --- Поля по Положению о ВКР (Прил. 2 §2): левое 30 мм, правое 15 мм,
+% --- верхнее 20 мм, нижнее 20 мм. Дополнительный includehead/foot
+% --- учитывает места под колонтитул и подвал, чтобы основное поле
+% --- начиналось ровно от заданной границы.
+\geometry{twoside=false,
+          left=30mm,right=15mm,top=20mm,bottom=20mm,
+          includehead,includefoot,headheight=15pt,headsep=6mm,footskip=8mm}
+
+% --- Абзацный отступ (Прил. 2 §2) ------------------------------------------
+\setlength{\parindent}{1.25cm}
+
 \hypersetup{colorlinks=true,linkcolor=blue!60!black,citecolor=green!50!black}
 
-%--- Теоремные окружения ---
+% --- Подписи рисунков и таблиц по Положению (Прил. 2 §4) -------------------
+% «Рисунок N — Название» по центру под рисунком; для таблиц «Таблица N —
+% Название» слева, без отступа, в одну строку. Класс mipt-thesis-bs
+% переопределяет \figurename как «Рис.», поэтому переопределяем после
+% него (а также форматируем разделитель — endash вместо двоеточия).
+\usepackage{caption}
+\captionsetup{labelsep=endash,font=normal}
+\captionsetup[table]{justification=raggedright,singlelinecheck=false}
+\addto\captionsrussian{%
+  \renewcommand{\figurename}{Рисунок}%
+  \renewcommand{\tablename}{Таблица}%
+}
+
+% --- Нумерация страниц по центру нижнего поля (Прил. 2 §3) -----------------
+% Класс mipt-thesis-bs ставит \thepage в верхний внешний угол. Положение
+% требует «середина нижнего поля». Переопределяем стиль `miptthesis` после
+% его декларации в классе и принудительно подключаем заново через
+% \pagestyle.
+\fancypagestyle{miptthesis}{%
+  \fancyhf{}%
+  \fancyfoot[C]{\thepage}%
+  \renewcommand{\headrulewidth}{0pt}%
+  \renewcommand{\footrulewidth}{0pt}%
+}
+\pagestyle{miptthesis}
+
+%--- Теоремные окружения ---------------------------------------------------
+% ГОСТ-совместимый вариант: чёрный жирный serif-заголовок в основном
+% семействе шрифтов (Latin Modern), без цвета и без sans-serif в теле
+% научной работы. Дифференциация трёх классов утверждений — через
+% штатные стили amsthm:
+%   * miptmain (≡ plain)      — теоремы/леммы/следствия/утверждения/
+%                                гипотезы: жирный заголовок на отдельной
+%                                строке + курсивное тело;
+%   * miptdef  (≡ definition) — определения и предположения: жирный
+%                                заголовок на отдельной строке + прямое тело;
+%   * miptrem  (≡ remark)     — замечания: курсивный заголовок обычного
+%                                веса inline + прямое тело (намеренно
+%                                «легче», без линий-разделителей).
+% Заголовок на отдельной строке достигается передачей \newline в качестве
+% «head/body sep» (7-й аргумент). Тонкие горизонтальные линии-разделители
+% сверху и снизу добавляются ниже через \BeforeBeginEnvironment /
+% \AfterEndEnvironment из etoolbox — для главных утверждений, определений
+% и доказательств, но НЕ для замечаний.
+% Сигнатура \newtheoremstyle:
+%   {above}{below}{body font}{indent}{header font}{punct}{head/body sep}{custom}
+\newtheoremstyle{miptmain}%
+  {0.6\baselineskip}{0.4\baselineskip}{\itshape}{0pt}%
+  {\large\bfseries}{.}{\newline}{}
+\newtheoremstyle{miptdef}%
+  {0.6\baselineskip}{0.4\baselineskip}{\normalfont}{0pt}%
+  {\large\bfseries}{.}{\newline}{}
+\newtheoremstyle{miptrem}%
+  {0.6\baselineskip}{0.4\baselineskip}{\normalfont}{0pt}%
+  {\itshape}{.}{0.5em}{}
+
+\theoremstyle{miptmain}
 \newtheorem{theorem}{Теорема}[chapter]
 \newtheorem{lemma}[theorem]{Лемма}
 \newtheorem{corollary}[theorem]{Следствие}
-\newtheorem{definition}[theorem]{Определение}
-\newtheorem{remark}[theorem]{Замечание}
-\newtheorem{assumption}{Предположение}[chapter]
 \newtheorem{conjecture}[theorem]{Гипотеза}
 \newtheorem{proposition}{Утверждение}[chapter]
+
+\theoremstyle{miptdef}
+\newtheorem{definition}[theorem]{Определение}
+\newtheorem{assumption}{Предположение}[chapter]
+
+\theoremstyle{miptrem}
+\newtheorem{remark}[theorem]{Замечание}
+
+% --- Без левого отступа: блоки теорем/лемм/доказательств идут по той же
+% --- левой границе, что и основной текст. Дифференциация остаётся только
+% --- по \newtheoremstyle (жирный заголовок \large на отдельной строке +
+% --- курсив/прямой шрифт тела).
+
+% --- Доказательства: жирный заголовок «Доказательство.» на отдельной
+% --- строке и заметный QED -------------------------------------------------
+% Стандартный amsthm печатает заголовок курсивом и в одну линию с телом;
+% перепакуем proof-окружение с \bfseries и принудительным переводом строки
+% после заголовка (\mbox{}\par\nobreak\noindent — стандартный приём,
+% сохраняющий ignorespaces и не нарушающий trivlist). \blacksquare —
+% заполненный квадрат, контрастнее дефолтного незаполненного.
+\renewcommand{\proofname}{Доказательство}
+\renewcommand{\qedsymbol}{\ensuremath{\blacksquare}}
+\makeatletter
+\renewenvironment{proof}[1][\proofname]{\par
+  \pushQED{\qed}%
+  \normalfont \topsep6\p@\@plus6\p@\relax
+  \trivlist
+  \item[\hskip\labelsep
+        \large\bfseries
+    #1\@addpunct{.}]\mbox{}\par\nobreak\noindent\ignorespaces
+}{%
+  \popQED\endtrivlist\@endpefalse
+}
+\makeatother
 
 %--- Математические макросы ---
 \newcommand{\RR}{\mathbb{R}}
@@ -145,7 +289,10 @@
 %%  Аннотации (ru, en) и список обозначений
 %% ============================================================
 \include{sections/abstract_ru}
-\include{sections/abstract_en}
+% Английская аннотация исключена из сборки: Положение о ВКР не требует
+% второй аннотации, а п. 2.4 предписывает выполнение работы на языке
+% получения образования.
+%\include{sections/abstract_en}
 \include{sections/notation}
 
 %% ============================================================
@@ -154,9 +301,11 @@
 \include{sections/introduction}
 
 %% ============================================================
-%%  Обзор литературы
+%%  Обзор литературы — раздел исключён из работы (2026-05-01).
+%%  Положение о ВКР такого структурного элемента не требует;
+%%  тематика обзора покрыта вводными частями глав 1–4.
 %% ============================================================
-\include{sections/literature_review}
+%\include{sections/literature_review}
 
 %% ============================================================
 %%  Главы
@@ -172,14 +321,43 @@
 \include{sections/conclusion}
 
 %% ============================================================
-%%  Программная реализация и воспроизводимость
+%%  Программная реализация и воспроизводимость — перенесено
+%%  в \appendix как первое приложение (2026-05-01).
 %% ============================================================
-\include{sections/reproducibility}
+%\include{sections/reproducibility}
 
 %% ============================================================
 %%  Приложения
 %% ============================================================
+% Положение о ВКР, Прил. 1 §3: «Приложения обозначают прописными буквами
+% кириллического алфавита». Стандартное \appendix даёт латинские A, B, …,
+% поэтому переопределяем счётчик главы на \Asbuk.
+% Также по Прил. 1 §3 каждое приложение начинается с новой страницы и
+% слова «ПРИЛОЖЕНИЕ» по центру верхней части. Класс mipt-thesis-bs
+% использует \raggedright в \@makechapterhead — переопределяем его на
+% центрированную раскладку, чтобы выполнить требование Положения.
 \appendix
+\renewcommand{\thechapter}{\Asbuk{chapter}}
+\setcounter{chapter}{0}
+\addto\captionsrussian{\renewcommand{\appendixname}{ПРИЛОЖЕНИЕ}}
+\renewcommand{\appendixname}{ПРИЛОЖЕНИЕ}
+\makeatletter
+\def\@makechapterhead#1{%
+  \vspace*{20\p@}%
+  {\parindent \z@ \centering \normalfont
+    \ifnum \c@secnumdepth >\m@ne
+      \if@mainmatter
+        \large\bfseries \@chapapp\nobreakspace\thechapter
+        \par\nobreak\vskip 20\p@
+      \fi
+    \fi
+    \interlinepenalty\@M
+    \Large\bfseries #1\par\nobreak
+    \vskip 30\p@
+  }}
+\makeatother
+
+\include{appendix/app_reproducibility}
 \include{appendix/app_alignment}
 \include{appendix/app_sp_afd_proof}
 

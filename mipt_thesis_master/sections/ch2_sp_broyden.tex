@@ -1,12 +1,40 @@
 \chapter{Алгоритм SP-Broyden}\label{ch:sp-broyden-theory}
 %% ============================================================
 
+В этой главе строится и анализируется алгоритм SP-Broyden~---
+квазиньютоновский метод решения системы $F(x)=0$ с обновлением
+якобиана, сохраняющим $p+1$ секущих условий вместо одного, как в
+классическом Бройдене. SP-обновление было введено в
+гл.~\ref{ch:jacobian} как один из мультисекущих вариантов; здесь
+устанавливаются его теоретические свойства и границы применимости.
+
+Основные результаты главы:
+теорема~\ref{thm:minimality}~--- единственность SP-обновления как
+минимизатора $\|B - B_k\|_F$ при сохранении $p+1$ секущих условий;
+теорема~\ref{thm:bd}~--- точное разложение и оценка bounded
+deterioration по фробениусовой норме ошибки $E_k = B_k - \Jstar$;
+следствие~\ref{cor:subspace-alignment}~--- безусловная
+$O(\rho_k)$-аппроксимация якобиана на подпространстве прошлых шагов
+(структурное преимущество над классическим Бройденом);
+теорема~\ref{thm:global-conv}~--- глобальная сходимость в схеме
+``квазиньютоновский метод $+$ Армихо''. Численные эксперименты
+(\S\ref{sec:spb_numerics}) и limited-memory вариант L-SP-Broyden
+(\S\ref{sec:highdim}) дополняют теоретическую часть.
+
+Оценка~\eqref{eq:bd_squared} теоремы~\ref{thm:bd} используется в
+гл.~\ref{ch:sp-broyden-viji} (cor.~\ref{cor:sp-in-segment}) для
+равномерной фробениусовской оценки $\|B_k - \Jstar\|_F \le M_0$ внутри
+сегмента VIJI-Restarted, что является ключевым техническим звеном
+анализа квазиньютоновского варианта VIJI.
+
+\medskip
+
 \noindent\textbf{Обозначения и предположения главы.}\enskip
 Рассматривается задача поиска корня $F(x) = 0$ с
 непрерывно-дифференцируемым отображением $F\colon\RR^n \to \RR^n$
 и якобианом $J(x) = F'(x)$. Обозначим $x^*$~--- корень системы
-($F(x^*) = 0$), $J^* = J(x^*)$, $s_k = x_{k+1} - x_k$,
-$y_k = F(x_{k+1}) - F(x_k)$, $E_k = B_k - J^*$~--- ошибку
+($F(x^*) = 0$), $\Jstar = J(x^*)$, $s_k = x_{k+1} - x_k$,
+$y_k = F(x_{k+1}) - F(x_k)$, $E_k = B_k - \Jstar$~--- ошибку
 аппроксимации якобиана. Во всех теоретических утверждениях
 главы~2 предполагается, что якобиан липшицев на некоторой открытой
 окрестности $\mathcal{O} \subset \RR^n$ точки $x^*$:
@@ -105,56 +133,35 @@ $s_k$, ортогональной прошлым шагам, и нормиров
 
 Полный алгоритм приведён в Алгоритме~\ref{alg:sp_broyden}.
 
-\begin{algorithm}
-\caption{SP-Broyden$(F,\,x_0,\,p_{\max},\,\mathtt{multisecant},\,
-         \mathtt{accumulate},\,\widetilde{B},\,\tau,\,\varepsilon;\,
-         \mathtt{globalize},\,\mathtt{rescale},\,
-         \varepsilon_B,\,C_{\mathrm{safe}},\,\nu_{\mathrm{reg}})$}
+\begin{breakablealgorithm}
+\caption{SP-Broyden$(F,\,x_0,\,p_{\max},\,\widetilde{B},\,\tau,\,\varepsilon;\,
+         \text{\normalfont опции})$}
 \label{alg:sp_broyden}
 \begin{algorithmic}
-\Require $F\colon \mathbb{R}^n \to \mathbb{R}^n$,\ $x_0 \in \mathbb{R}^n$,\
+\Require \textbf{базовые параметры:}\
+         $F\colon \mathbb{R}^n \to \mathbb{R}^n$,\ $x_0 \in \mathbb{R}^n$,\
          $p_{\max} \geq 0$,\
-         $\mathtt{multisecant} \in \{\text{true},\text{false}\}$,\
-         $\mathtt{accumulate} \in \{\text{true},\text{false}\}$,\
          $\widetilde{B} \in \mathbb{R}^{n \times n}$
          \Comment{опорная матрица алгоритма (параметр функции), куда
                   происходит сброс в режиме пересборки; обычно $I_n$.
                   Не путать с базовой матрицей $\widehat{B}_k$ в формуле обновления.},\
          $\tau > 0$,\ $\varepsilon > 0$
-\Require \emph{(опции, см.\ ремарки~\ref{rem:init-scaling}--\ref{rem:fallback})}\hfil\null
-         \par\hangindent=2em
-         $\mathtt{globalize} \in \{\text{true},\text{false}\}$ (флаг Армихо,
-         см.\ Алгоритм~\ref{alg:sp_broyden_ls}),\
-         $\mathtt{rescale} \in \{\text{true},\text{false}\}$
-         (флаг масштабирования $B_0$ по Шанно--Пхуа),\
-         $\varepsilon_B > 0$ и $C_{\mathrm{safe}} > 1$ (пороги срабатывания
-         регуляризации),\ $\nu_{\mathrm{reg}} > 0$ (множитель
-         Левенберга--Марквардта)
+\Statex \hspace{\algorithmicindent}\textbf{опции:}\
+         $\mathtt{multisecant} \in \{\text{true},\text{false}\}$,\
+         $\mathtt{accumulate} \in \{\text{true},\text{false}\}$,\
+         $\mathtt{globalize} \in \{\text{true},\text{false}\}$
+         \Comment{флаг Армихо, см.\ Алгоритм~\ref{alg:qn_armijo}}
 \State $B_0 \leftarrow \widetilde{B}$,\quad $k \leftarrow 0$
 \While{$\|F(x_k)\| \geq \varepsilon$}
   \State Решить $B_k\,d_k = -F(x_k)$
   %------------------------------------------------------------
-  \If{$\sigma_{\min}(B_k) < \varepsilon_B$ \textbf{or} $\|d_k\| > C_{\mathrm{safe}}\max(\|x_k\|,1)$}
-    \State \Comment{fallback Левенберга--Марквардта, см.\ ремарку~\ref{rem:fallback}}
-    \State $\lambda_k \leftarrow \nu_{\mathrm{reg}}\,\|F(x_k)\|$
-    \State Решить $(B_k + \lambda_k I)\,d_k = -F(x_k)$
-  \EndIf
-  %------------------------------------------------------------
   \If{$\mathtt{globalize}$}
-    \State $\alpha_k \leftarrow$ Armijo-backtracking из Алгоритма~\ref{alg:sp_broyden_ls}
+    \State $\alpha_k \leftarrow$ Armijo-backtracking из Алгоритма~\ref{alg:qn_armijo}
   \Else
     \State $\alpha_k \leftarrow 1$
   \EndIf
   \State $x_{k+1} \leftarrow x_k + \alpha_k\,d_k$
   \State $s_k \leftarrow \alpha_k\,d_k$,\quad $y_k \leftarrow F(x_{k+1}) - F(x_k)$
-  %------------------------------------------------------------
-  \If{$k = 0$ \textbf{and} $\mathtt{rescale}$ \textbf{and} $y_0^{\top} s_0 > 0$}
-    \State \Comment{масштабирование $B_0$ по Шанно--Пхуа, см.\ ремарку~\ref{rem:init-scaling}}
-    \State $\sigma_0 \leftarrow (y_0^{\top} y_0) / (y_0^{\top} s_0)$
-    \State $B_0 \leftarrow \sigma_0\,B_0$
-    \State $\widetilde{B} \leftarrow \sigma_0\,\widetilde{B}$
-       \Comment{синхронизировать опорную матрицу для будущих рестартов}
-  \EndIf
   %------------------------------------------------------------
   \State \textbf{Адаптивный выбор глубины:}
   \State $p \leftarrow 0$
@@ -191,12 +198,12 @@ $s_k$, ортогональной прошлым шагам, и нормиров
 \EndWhile
 \Return $x_k$
 \end{algorithmic}
-\end{algorithm}
+\end{breakablealgorithm}
 
 \begin{remark}[Связь с таксономией обновлений]\label{rem:taxonomy}
 Параметры $\mathtt{accumulate}$ и $\mathtt{multisecant}$ задают четыре
 режима работы алгоритма, соответствующие ячейкам классификации
-Fang--Saad (2009):
+Fang--Saad~\cite{fang2009}:
 \begin{center}
 \begin{tabular}{c|cc}
   & $\mathtt{multisecant} = \text{false}$ (ранг 1)
@@ -213,129 +220,31 @@ $\mathtt{accumulate} = \text{false}$
 Левая нижняя ячейка ($\mathtt{accumulate} = \text{false}$,
 $\mathtt{multisecant} = \text{false}$) формально корректна,
 но на каждом шаге использует только текущую пару $(s_k, y_k)$
-при фиксированной опорной матрице~$\widetilde{B}$, отбрасывая всю накопленную
-информацию. Этот режим не встречается в литературе и не даёт
-преимуществ перед накоплением.
+при фиксированной опорной матрице~$\widetilde{B}$, отбрасывая всю
+накопленную информацию; во всех численных экспериментах главы принят
+$\mathtt{accumulate} = \text{true}$.
 \end{remark}
 
 \begin{remark}[Сложность]\label{rem:complexity}
 Адаптивный выбор глубины и вычисление $v_k$ требуют $O(n\,p^2)$ операций
 (формирование грамиана и решение системы размера $(p{+}1)\times(p{+}1)$).
 При $p \ll n$ это пренебрежимо мало по сравнению с $O(n^2)$
-на решение линейной системы $B_k\,d_k = -F(x_k)$.
-Дополнительные опции из ремарок~\ref{rem:init-scaling}--\ref{rem:fallback}
-не меняют главного порядка стоимости итерации: проверка $\sigma_{\min}(B_k)$
-делается одновременно с прямым решением (при использовании LU- или
-QR-разложения~--- по диагонали $U$ или $R$); масштабирование Шанно--Пхуа
-требует один скалярный продукт $y_0^{\top} y_0$ и одно деление на
-$y_0^{\top} s_0$, оба $O(n)$; backtracking-Армихо добавляет в среднем
-$j_k\le J_{\max}$ дополнительных вычислений $F$ на итерацию (типично
-$j_k\in\{0,1,2\}$, см.\ \S\ref{sec:globalization}).
-\end{remark}
-
-\begin{remark}[Начальное масштабирование $B_0$ по Шанно--Пхуа]\label{rem:init-scaling}
-По умолчанию $B_0 = \widetilde{B} = I_n$, т.\,е.\ начальный квази-якобиан
-не учитывает спектр локального линеаризованного оператора. Известная
-эмпирическая стабилизирующая поправка~\cite{shannophua1978}~--- после
-первой итерации, когда становится доступной пара $(s_0, y_0)$ с
-$y_0^{\top} s_0 > 0$, перемасштабировать
-\begin{equation}\label{eq:sp_init_scaling}
-  B_0 \leftarrow \sigma_0\,B_0, \qquad
-  \sigma_0 := \frac{y_0^{\top} y_0}{y_0^{\top} s_0},
-\end{equation}
-что обеспечивает <<средний>> Рэлеев фактор $s_0^{\top} B_0 s_0/\|s_0\|^2$,
-согласованный с парой $(s_0, y_0)$. В исходной публикации~\cite{shannophua1978}
-эта формула выписана для обратной матрицы $H_0 = B_0^{-1}$ как
-$H_0 \leftarrow (y_0^{\top} s_0)/(y_0^{\top} y_0)\,H_0$; для прямой
-$B$-формы получается~\eqref{eq:sp_init_scaling}. Условие $y_0^{\top} s_0 > 0$
-в скалярных нелинейных уравнениях не гарантировано (в монотонных
-системах~--- автоматически), поэтому в Алгоритме~\ref{alg:sp_broyden} стоит
-явный охранник $y_0^{\top} s_0 > 0$, при срабатывании
-которого масштабирование пропускается. На несимметричных задачах
-из главы~\ref{ch:sp-broyden-viji} этот защитный фильтр срабатывает в
-$3{-}5\,\%$ итераций, не влияя ни на устойчивость, ни на скорость
-сходимости.
-В режиме рестартов схемы VIJI-Restarted (см.\ ремарку~\ref{rem:invariant-restart})
-обновлённое $\widetilde{B}$ переиспользуется как начальная точка
-$B_0^{(s)}$ следующего сегмента; альтернативно $\sigma_0$ можно
-пересчитывать заново на каждом рестарте по локальной паре
-$(s_0^{(s)}, y_0^{(s)})$~--- это даёт устойчивость к смене масштаба
-оператора $F$ при переходе сегментов и в наших экспериментах
-(\S\ref{sec:spb_numerics}) сокращает число итераций на
-$10{-}15\,\%$ при $\mathtt{rescale} = \text{true}$ против
-$\mathtt{rescale} = \text{false}$.
-\end{remark}
-
-\begin{remark}[Выбор порога $\tau$ адаптивной глубины]\label{rem:tau-ablation}
-Порог $\mathrm{cond}(G_p) < \tau$ управляет балансом <<больше секущих
-условий vs.\ численная устойчивость грамиана>>. Качественно: при $\tau\to\infty$
-эффективное окно $p_k\to p_{\max}$, но $\sigma_{\min}^2(S_p)$ не контролируется
-снизу, что портит положительный член в~\eqref{eq:bd_squared} и в
-ремарке~\ref{rem:comparison}; при $\tau\to 0$ окно схлопывается
-($p_k\to 0$), и алгоритм сводится к классическому Бройдену.
-Эталонное значение $\tau=10^{3}$, используемое в нашей реализации
-и в численных экспериментах \S\ref{sec:spb_numerics}, обосновано как
-двойным образом: \emph{(i)} оценкой
-$\Delta_k^{\mathrm{SP}} \le \tau(p+1)\,\Delta_k^{\mathrm{Br}}(1+o(1))$
-из ремарки~\ref{rem:comparison}, согласно которой положительный
-член bounded deterioration вырастает не более чем в постоянное
-число раз; \emph{(ii)} эмпирическими наблюдениями
-рис.~\ref{fig:spb_cond}: на Discrete BVP, $n=100$, реальная
-$\mathrm{cond}(G_p)$ в работающем режиме колеблется в полосе
-$10^1\text{--}10^3$ с медианой $\approx 126$ и максимумом $\approx 998$,
-вплотную к выбранному порогу. Понижение порога на порядок ($\tau=10^2$)
-схлопывает $p_k$ до $0\text{--}3$ на той же задаче и даёт траекторию
-сходимости близкую к классическому Бройдену; повышение на 3 порядка
-($\tau=10^6$) допускает плохо обусловленный $G_p$, который вызывает
-численный рост шага $\|d_k\|$ и редкие срабатывания fallback-регуляризатора
-из ремарки~\ref{rem:fallback}. Систематическое исследование
-зависимости числа итераций от $\tau\in\{10,10^2,10^3,10^6\}$
-по двум классам задач Moré--Garbow--Hillstrom (Discrete BVP, Broyden Banded;
-$n=100$) включено в скрипт~\texttt{diag\_sp\_broyden.py}; в окне
-$\tau\in[10^2, 10^4]$ метод устойчив (число итераций отличается на
-$\le 10\,\%$), что и оправдывает дефолтное $\tau=10^3$ как точку
-с приемлемым запасом по устойчивости.
-\end{remark}
-
-\begin{remark}[Fallback при вырождении $B_k$]\label{rem:fallback}
-В отличие от симметричных квазиньютоновских схем (BFGS, SR1) с
-поддержанием положительной определённости, обновление SP-Broyden
-в общем случае не гарантирует невырожденности $B_k$ при произвольных
-$(s_k, y_k)$. На практике типичные сценарии срыва~--- (а) холодный старт
-далеко от корня с $\widetilde{B} = I$, при котором первые пары
-$(s_k, y_k)$ могут быть линейно зависимы; (б) накопление численных
-ошибок в режиме $\mathtt{accumulate}=\text{true}$ при долгих
-траекториях. Стандартное лекарство, восходящее к
-работе Левенберга--Марквардта~\cite{marquardt1963} в контексте задач
-наименьших квадратов и обобщённое для общих квазиньютоновских
-систем в~\cite[\S 6.4]{dennis1996} и~\cite[\S 11.1]{bfgs},~---
-тихоновская регуляризация: при срабатывании одного из охранников
-\begin{equation}\label{eq:fallback-trigger}
-  \sigma_{\min}(B_k) < \varepsilon_B
-  \qquad\text{или}\qquad
-  \|d_k\| > C_{\mathrm{safe}}\,\max(\|x_k\|, 1)
-\end{equation}
-заменить $B_k$ на $B_k + \lambda_k I$ с $\lambda_k = \nu_{\mathrm{reg}}\,\|F(x_k)\|$
-(адаптивная демпфирующая константа, согласованная с локальным масштабом
-невязки~\cite[Th.~10.2.1]{dennis1996}) и пересчитать шаг.
-Дефолтные значения: $\varepsilon_B = 10^{-12}\,\|B_k\|$ (относительный
-порог), $C_{\mathrm{safe}} = 10^{2}$, $\nu_{\mathrm{reg}} = 10^{-3}$.
-Преимущества формы~\eqref{eq:fallback-trigger}: \emph{(i)} проверка
-$\sigma_{\min}(B_k) < \varepsilon_B$ не требует SVD~--- достаточно следить
-за минимальным элементом по диагонали $U$- или $R$-фактора уже выполненной
-LU/QR-факторизации; \emph{(ii)} проверка $\|d_k\| > C_{\mathrm{safe}}\,\|x_k\|$
-ловит численно <<разлетающиеся>> направления без обращения к спектру.
-В исходной форме Алгоритма~\ref{alg:sp_broyden} (без рестартов) на
-тестовых задачах из ремарок~\ref{rem:tau-ablation} и ниже срабатывание
-fallback наблюдается в $0{-}2\,\%$ итераций, что свидетельствует о
-структурной устойчивости SP-обновления при разумных $\tau, p_{\max}$.
-В сочетании с глобализацией Армихо (Алгоритм~\ref{alg:sp_broyden_ls}
-и \S\ref{sec:globalization}) fallback дополнительно гарантирует, что
-направление $d_k$ остаётся допустимым в смысле леммы~\ref{lem:descent}.
+на решение линейной системы $B_k\,d_k = -F(x_k)$. Опциональный
+backtracking-Армихо добавляет в среднем $j_k\le J_{\max}$ дополнительных
+вычислений $F$ на итерацию (типично $j_k\in\{0,1,2\}$,
+см.~\S\ref{sec:globalization}) и не меняет главного порядка стоимости.
+Мультисекущая ветвь (\,$\mathtt{multisecant}=\text{true}$\,) выполняет
+ранг-$(p{+}1)$ обновление
+$B_{k+1} = \widehat B_k + (Y_p - \widehat B_k S_p)\,G_p^{-1}\,S_p^\top$
+и требует $O(n^2 p)$ операций (доминирует матрично-матричное
+произведение $\widehat B_k S_p$); по
+лемме~\ref{lem:equivalence} при выполнении инварианта~\eqref{eq:invariant}
+она даёт тот же результат, что и ранг-$1$ ветвь, поэтому в численных
+экспериментах главы используется только ранг-$1$ форма.
 \end{remark}
 
 %% ============================================================
-\section{Минимальность SP-обновления (теорема~\ref{thm:minimality})}
+\section{Минимальность SP-обновления}
 %% ============================================================
  
 \begin{theorem}[Минимальность]\label{thm:minimality}
@@ -388,15 +297,11 @@ fallback наблюдается в $0{-}2\,\%$ итераций, что свид
  
 \textbf{Шаг~3: подстановка.}
 Решение: $w^* = v_k^* = S_p\,G_p^{-1}\,e_1$ (по утверждению~\ref{prop:vstar}).
-Обновление: $B_{k+1} = B_k + r\,v_k^{*\top} = B_k + (y_k - B_k s_k)\,v_k^{*\top} / (v_k^{*\top} s_k)$
-(с учетом $v_k^{*\top} s_k = e_1^\top G_p^{-1} S_p^\top s_k = e_1^\top G_p^{-1} G_p e_1 = 1$,
-но в общем случае $v_k^{*\top} s_k = e_1^\top G_p^{-1} (S_p^\top s_k)$, что равно
-$(G_p^{-1})_{11}^{} \cdot \|s_k\|^2 + \sum_{l=1}^{p} (G_p^{-1})_{1,l+1} \cdot s_{k-l}^\top s_k$).
- 
-Заметим, что $S_p^\top s_k$~--- это первый столбец $G_p$, т.\,е. $S_p^\top s_k = G_p e_1$.
-Следовательно, $v_k^{*\top} s_k = e_1^\top G_p^{-1} G_p e_1 = 1$.
- 
-Таким образом, $B_{k+1} = B_k + (y_k - B_k s_k)\,v_k^{*\top}$.
+Заметим, что $S_p^\top s_k$~--- первый столбец грамиана $G_p$
+(по определению $S_p$, см.\ замечание~\ref{rem:notation}),
+т.\,е.\ $S_p^\top s_k = G_p\,e_1$, откуда
+$v_k^{*\top} s_k = e_1^\top G_p^{-1}\,G_p\,e_1 = 1$. Следовательно,
+$B_{k+1} = B_k + r\,v_k^{*\top} = B_k + (y_k - B_k s_k)\,v_k^{*\top}.$
  
 \textbf{Шаг~4: единственность.}
 Единственность следует из строгой выпуклости нормы Фробениуса
@@ -409,7 +314,7 @@ $(G_p^{-1})_{11}^{} \cdot \|s_k\|^2 + \sum_{l=1}^{p} (G_p^{-1})_{1,l+1} \cdot s_
 \end{proof}
  
 %% ============================================================
-\section{Качество аппроксимации якобиана (теорема~\ref{thm:bd})}\label{sec:sp-broyden-proof}
+\section{Качество аппроксимации якобиана}\label{sec:sp-broyden-proof}
 %% ============================================================
  
 %% ============================================================
@@ -444,7 +349,8 @@ $G_p = S_p^\top S_p \in \mathbb{R}^{(p+1)\times(p+1)}$.
 \[
   Y_p - B_k S_p = (y_k - B_k s_k)\,e_1^\top,
 \]
-где $e_1 \in \mathbb{R}^{p+1}$~--- первый стандартный базисный вектор.
+где $e_1 \in \mathbb{R}^{p+1}$~--- первый стандартный базисный вектор
+(тот же, что в~\eqref{eq:vstar}).
 Подставляя в~\eqref{eq:ms_update}:
 \[
   B_{k+1}^{\mathrm{MS}}
@@ -459,40 +365,40 @@ $v_k^{*\top} s_j = e_1^\top G_p^{-1}\,S_p^\top s_j$.
 $v_k^{*\top} s_j = e_1^\top e_{1+k-j} = \delta_{jk}$.
 \end{proof}
 
-%% --- Локальные предпосылки и оценка длины шага ---
-
-\begin{assumption}[Равномерная ограниченность $B_j^{-1}$]\label{as:bj-bounded}
-Существует константа $M > 0$ такая, что $B_j$ обратима и $\|B_j^{-1}\| \le M$
-для всех $j$, рассматриваемых в анализе.
-\end{assumption}
-
-\begin{remark}[Достижимость предположения~\ref{as:bj-bounded}]
-\label{rem:bj-bounded-attainable}
-Условие~\ref{as:bj-bounded} выполняется автоматически в окрестности
-корня $x^{*}$ при невырожденном $J(x^{*})$, $\sigma_{\min}(J^{*}) =: \mu > 0$,
-и при условии bounded deterioration $\|E_j\| \le \eta\,\mu$, $\eta < 1$:
-по неравенству Вейля $\sigma_{\min}(B_j) \ge \sigma_{\min}(J^{*}) - \|E_j\|
-\ge (1-\eta)\,\mu$, откуда $\|B_j^{-1}\| \le 1/((1-\eta)\,\mu) =: M$.
-В алгоритме SP-Broyden + Armijo (\S\ref{sec:globalization}) ограниченность
-$\|B_j^{-1}\|$ дополнительно поддерживается fallback'ом
-$B_j \leftarrow \widetilde{B}$ при срыве line search'а.
+\begin{remark}[Область применимости леммы~\ref{lem:equivalence}]
+\label{rem:invariant-scope}
+Инвариант~\eqref{eq:invariant} выполнен индуктивно при
+\textbf{(i)} базовом режиме Алгоритма~\ref{alg:sp_broyden} с
+$\mathtt{accumulate}=\text{true}$ (когда $\widehat B_k = B_k$ на каждой
+итерации, и теорема~\ref{thm:minimality} гарантирует
+$B_{k+1} s_j = y_j$ для $j=k{-}p,\ldots,k$) и \textbf{(ii)} постоянной
+или невозрастающей эффективной глубине $p$. При
+$\mathtt{accumulate}=\text{false}$, при рестартах схемы VIJI-Restarted
+(гл.~\ref{ch:sp-broyden-viji}) или при расширении окна (увеличение $p$
+от итерации к итерации) инвариант сбрасывается, и ранг-$1$ ветвь
+($\mathtt{multisecant}=\text{false}$) расходится с мультисекущей; в
+этих случаях теорема~\ref{thm:bd}~(b) применяется с пересчитанным
+$B_k$ от точки сброса. В численных экспериментах главы и в ссылках из
+гл.~\ref{ch:sp-broyden-viji} используется базовый режим
+$\mathtt{accumulate}=\text{true}$.
 \end{remark}
+
+%% --- Локальная оценка длины шага ---
 
 \begin{lemma}[Локальная оценка длины шага через расстояние до корня]
 \label{lem:step-bound}
 Пусть якобиан $J$ удовлетворяет условию Липшица~\eqref{eq:lipschitz}
 с константой~$L$ на шаре $B(x^{*}, \delta_0) := \{x : \|x - x^{*}\| \le \delta_0\}$,
-$F(x^{*}) = 0$, и выполнено предположение~\ref{as:bj-bounded}.
-Тогда для всех $x_j \in B(x^{*}, \delta_0)$ длина шага
-$s_j = -B_j^{-1} F(x_j)$ удовлетворяет
+$F(x^{*}) = 0$, и пусть $B_j$ обратима с $\|B_j^{-1}\| \le M$
+для всех $j$, рассматриваемых в анализе. Тогда для всех
+$x_j \in B(x^{*}, \delta_0)$ длина шага $s_j = -B_j^{-1} F(x_j)$
+удовлетворяет
 \begin{equation}\label{eq:step-bound-Cs}
   \|s_j\| \;\le\; C_s\,\|x_j - x^{*}\|,
   \qquad
-  C_s \;:=\; M\Big(\|J^{*}\| + \tfrac{L}{2}\,\delta_0\Big).
+  C_s \;:=\; M\Big(\|\Jstar\| + \tfrac{L}{2}\,\delta_0\Big),
 \end{equation}
-В частности, выбирая $\delta_0 \le \delta_0^{*} := (1/M - \|J^{*}\|)\cdot 2/L$
-(требующее $M\|J^{*}\| < 1$), получаем $C_s \le 1$, т.\,е.\ выполняется
-условие <<\emph{вариант~B}>>: $\|s_j\| \le \|x_j - x^{*}\|$.
+где $\|\Jstar\|$~--- спектральная (операторная) норма $J(x^{*})$.
 \end{lemma}
 
 \begin{proof}
@@ -501,27 +407,25 @@ $s_j = -B_j^{-1} F(x_j)$ удовлетворяет
   F(x_j) \;=\; F(x_j) - F(x^{*})
   \;=\; \left(\int_{0}^{1} J\!\big(x^{*} + t(x_j - x^{*})\big)\,dt\right)(x_j - x^{*}).
 \]
-Применяя оценку Липшица $\|J(x^{*} + \tau(x_j-x^{*})) - J^{*}\| \le L\,\tau\,\|x_j-x^{*}\|$
+Применяя оценку Липшица $\|J(x^{*} + \tau(x_j-x^{*})) - \Jstar\| \le L\,\tau\,\|x_j-x^{*}\|$
 и интегрируя:
 \[
   \left\|\int_{0}^{1} J\!\big(x^{*} + t(x_j-x^{*})\big)\,dt\right\|
-  \;\le\; \|J^{*}\| + \tfrac{L}{2}\,\|x_j - x^{*}\|
-  \;\le\; \|J^{*}\| + \tfrac{L}{2}\,\delta_0.
+  \;\le\; \|\Jstar\| + \tfrac{L}{2}\,\|x_j - x^{*}\|
+  \;\le\; \|\Jstar\| + \tfrac{L}{2}\,\delta_0.
 \]
-Отсюда $\|F(x_j)\| \le (\|J^{*}\| + \tfrac{L}{2}\,\delta_0)\,\|x_j - x^{*}\|$.
-По~\ref{as:bj-bounded}: $\|s_j\| \le M\,\|F(x_j)\|$, что
-даёт~\eqref{eq:step-bound-Cs}. Условие $C_s \le 1$
-эквивалентно $M(\|J^{*}\| + L\delta_0/2) \le 1$,
-откуда указанная оценка $\delta_0^{*}$.
-\qedhere
+Отсюда $\|F(x_j)\| \le (\|\Jstar\| + \tfrac{L}{2}\,\delta_0)\,\|x_j - x^{*}\|$.
+По условию леммы $\|s_j\| \le M\,\|F(x_j)\|$, что даёт~\eqref{eq:step-bound-Cs}.
 \end{proof}
 
 %% --- Основная теорема ---
 
 \begin{theorem}[Bounded deterioration для SP-Broyden]\label{thm:bd}
 В условиях леммы~\ref{lem:equivalence} пусть дополнительно якобиан $J(x)$
-удовлетворяет условию Липшица~\eqref{eq:lipschitz} с константой~$L$,
-и обозначим $J^* = J(x^*)$, $E_k = B_k - J^*$,
+удовлетворяет условию Липшица~\eqref{eq:lipschitz} с константой~$L$ на
+открытой окрестности $\mathcal{O}\subset\RR^n$, содержащей $x^{*}$, все
+точки $x_j$ и отрезки $\{x_j+t s_j : t\in[0,1]\}$ для $j=k-p,\ldots,k$.
+Обозначим $\Jstar = J(x^*)$, $E_k = B_k - \Jstar$,
 \[
   \Pi_k = S_p\,G_p^{-1}\,S_p^\top \quad\text{(ортогональный проектор на
   $\mathrm{col}\,S_p$)},
@@ -539,25 +443,47 @@ $s_j = -B_j^{-1} F(x_j)$ удовлетворяет
 \end{equation}
 где
 \begin{equation}\label{eq:Delta_def}
-  \Delta_k = \operatorname{tr}\!\bigl(G_p^{-1}\,(Y_p - J^*\!S_p)^\top
-  (Y_p - J^*\!S_p)\bigr).
+  \Delta_k = \operatorname{tr}\!\bigl(G_p^{-1}\,(Y_p - \Jstar\!S_p)^\top
+  (Y_p - \Jstar\!S_p)\bigr).
 \end{equation}
 
-\item[\textup{(b)}] \textbf{Оценка в квадрате нормы Фробениуса.}
+\item[\textup{(b)}] \textbf{Bounded deterioration.}
+Пусть выполнены условия леммы~\ref{lem:step-bound} с константой $C_s$
+(так что $\|s_j\|\le C_s\|x_j-x^{*}\|$ для $j=k-p,\ldots,k$).
+Обозначим
+\begin{equation}\label{eq:rho-window}
+  \rho_k \;:=\; \max_{k-p\,\le\,j\,\le\,k}\,\|x_j - x^{*}\|,
+  \qquad
+  \kappa_p \;:=\; \kappa(S_p)
+  = \frac{\sigma_{\max}(S_p)}{\sigma_{\min}(S_p)}.
+\end{equation}
+Тогда
 \begin{equation}\label{eq:bd_squared}
-  \|E_{k+1}\|_F^2 \leq \|E_k\|_F^2
-  + \frac{9L^2}{4\,\sigma_{\min}^2(S_p)}
-    \sum_{j=k-p}^{k} \|x_j - x^*\|^2\,\|s_j\|^2.
-\end{equation}
-
-\item[\textup{(c)}] \textbf{Оценка в норме Фробениуса.}
-\begin{equation}\label{eq:bd_linear}
-  \|E_{k+1}\|_F \leq \|E_k\|_F
-  + \frac{3L}{2\,\sigma_{\min}(S_p)}
-    \left(\sum_{j=k-p}^{k} \|x_j - x^*\|^2\,\|s_j\|^2\right)^{\!1/2}.
+  \|E_{k+1}\|_F^2 \;\le\; \|E_k\|_F^2 \;-\; \|E_k\,\Pi_k\|_F^2
+  \;+\; C_{\mathrm{SP}}^2\,\rho_k^2,
+  \qquad
+  C_{\mathrm{SP}} := L\,(1 + C_s/2)\,\sqrt{p+1}\,\kappa_p.
 \end{equation}
 \end{enumerate}
 \end{theorem}
+
+\begin{remark}[Расшифровка $C_{\mathrm{SP}}$]\label{rem:csp-meaning}
+Структура константы $C_{\mathrm{SP}}$ прозрачна: $L$~--- константа Липшица
+якобиана; $C_s$~--- типичный размер шага относительно расстояния до
+корня (лемма~\ref{lem:step-bound}); $\sqrt{p+1}$~--- цена расширения окна
+секущих; $\kappa_p$~--- обусловленность окна $S_p$. Адаптивный порог
+$\mathrm{cond}(G_p)<\tau$ Алгоритма~\ref{alg:sp_broyden} обеспечивает
+$\kappa_p\le\sqrt{\tau}$, так что $C_{\mathrm{SP}}\le L(1+C_s/2)\sqrt{\tau(p+1)}$.
+В классической форме Бройдена ($p=0$, $\Pi_k = s_k s_k^\top/\|s_k\|^2$,
+$\kappa_0 = 1$) эта оценка переходит в стандартную bounded deterioration
+с $C_{\mathrm{Br}} = L(1+C_s/2)$,~ср.~\cite{broyden1973,dennis1996}.
+Константа $M = \sup_j\|B_j^{-1}\|$ из леммы~\ref{lem:step-bound},
+входящая в $C_s$, конечна при $\|E_j\|<\sigma_{\min}(\Jstar)$ (неравенство
+Вейля); в гл.~\ref{ch:sp-broyden-viji} равномерная ограниченность
+$\|E_k\|_F$ внутри сегмента VIJI-Restarted
+(cor.~\ref{cor:sp-in-segment}) разрывает индуктивный цикл, делая
+оценку~\eqref{eq:bd_squared} безусловной.
+\end{remark}
 
 \begin{proof}
 
@@ -566,15 +492,15 @@ $s_j = -B_j^{-1} F(x_j)$ удовлетворяет
 Подставим определение~\eqref{eq:ms_update}:
 \begin{align}
   E_{k+1}
-  &= B_k - J^* + (Y_p - B_k S_p)\,G_p^{-1}\,S_p^\top \notag\\
-  &= E_k + \bigl[(Y_p - J^*\!S_p) - E_k\,S_p\bigr]\,G_p^{-1}\,S_p^\top \notag\\
+  &= B_k - \Jstar + (Y_p - B_k S_p)\,G_p^{-1}\,S_p^\top \notag\\
+  &= E_k + \bigl[(Y_p - \Jstar\!S_p) - E_k\,S_p\bigr]\,G_p^{-1}\,S_p^\top \notag\\
   &= E_k\,(I - S_p\,G_p^{-1}\,S_p^\top)
-     + (Y_p - J^*\!S_p)\,G_p^{-1}\,S_p^\top. \label{eq:Ek1_full}
+     + (Y_p - \Jstar\!S_p)\,G_p^{-1}\,S_p^\top. \label{eq:Ek1_full}
 \end{align}
 То есть:
 \begin{equation}\label{eq:Ek1_compact}
   E_{k+1} = E_k\,\Pi_k^\perp + R_k,
-  \qquad R_k = (Y_p - J^*\!S_p)\,G_p^{-1}\,S_p^\top.
+  \qquad R_k = (Y_p - \Jstar\!S_p)\,G_p^{-1}\,S_p^\top.
 \end{equation}
 
 \medskip
@@ -593,7 +519,7 @@ $s_j = -B_j^{-1} F(x_j)$ удовлетворяет
 
 Строка~$i$ матрицы $R_k$:
 \[
-  R_k^\top\,e^{(i)} = S_p\,G_p^{-1}\,(Y_p - J^*\!S_p)^\top\,e^{(i)}
+  R_k^\top\,e^{(i)} = S_p\,G_p^{-1}\,(Y_p - \Jstar\!S_p)^\top\,e^{(i)}
   \;\in\; \mathrm{col}\,S_p,
 \]
 поскольку вектор является линейной комбинацией столбцов~$S_p$.
@@ -601,10 +527,10 @@ $s_j = -B_j^{-1} F(x_j)$ удовлетворяет
 Скалярное произведение $i$-х строк:
 \begin{align*}
   \bigl(\Pi_k^\perp\,E_k^\top\,e^{(i)}\bigr)^\top
-  &\bigl(S_p\,G_p^{-1}\,(Y_p - J^*\!S_p)^\top\,e^{(i)}\bigr) \\
+  &\bigl(S_p\,G_p^{-1}\,(Y_p - \Jstar\!S_p)^\top\,e^{(i)}\bigr) \\
   &= (E_k^\top e^{(i)})^\top\,
      \underbrace{\Pi_k^\perp\,S_p}_{= 0}\,
-     G_p^{-1}\,(Y_p - J^*\!S_p)^\top\,e^{(i)}
+     G_p^{-1}\,(Y_p - \Jstar\!S_p)^\top\,e^{(i)}
   = 0,
 \end{align*}
 где $\Pi_k^\perp\,S_p = (I - S_p G_p^{-1} S_p^\top)\,S_p
@@ -639,7 +565,7 @@ $s_j = -B_j^{-1} F(x_j)$ удовлетворяет
 
 \medskip
 \textbf{Шаг~4: вычисление $\|R_k\|_F^2$.}
-Обозначим $A_k = Y_p - J^*\!S_p$. Тогда $R_k = A_k\,G_p^{-1}\,S_p^\top$ и:
+Обозначим $A_k = Y_p - \Jstar\!S_p$. Тогда $R_k = A_k\,G_p^{-1}\,S_p^\top$ и:
 \begin{align}
   \|R_k\|_F^2
   &= \operatorname{tr}\!\bigl(S_p\,G_p^{-1}\,A_k^\top A_k\,G_p^{-1}\,S_p^\top\bigr)
@@ -665,83 +591,74 @@ $\operatorname{tr}(MN) \leq \lambda_{\max}(M)\,\operatorname{tr}(N)$
 \end{equation}
 
 Оценим $\|A_k\|_F^2$. Столбец матрицы $A_k$, отвечающий индексу~$j$, равен
-$a_j = y_j - J^*\!s_j$. По теореме о среднем значении:
+$a_j = y_j - \Jstar\!s_j$. По теореме о среднем значении:
 \[
-  y_j - J^*\!s_j = \left(\int_0^1 \bigl[J(x_j + t\,s_j) - J^*\bigr]\,dt\right) s_j.
+  y_j - \Jstar\!s_j = \left(\int_0^1 \bigl[J(x_j + t\,s_j) - \Jstar\bigr]\,dt\right) s_j.
 \]
-По условию Липшица~\eqref{eq:lipschitz} и неравенству треугольника:
+Поскольку $x_j+t s_j\in\mathcal{O}$ для $t\in[0,1]$ и $\Jstar=J(x^{*})$, по
+условию Липшица~\eqref{eq:lipschitz} и неравенству треугольника:
 \[
-  \|J(x_j + t\,s_j) - J^*\| \leq L\,\|x_j + t\,s_j - x^*\|
+  \|J(x_j + t\,s_j) - \Jstar\| \leq L\,\|x_j + t\,s_j - x^*\|
   \leq L\,(\|x_j - x^*\| + t\,\|s_j\|).
 \]
 Интегрируя по $t \in [0,1]$:
 \begin{equation}\label{eq:integral_bound}
-  \left\|\int_0^1 \bigl[J(x_j + t\,s_j) - J^*\bigr]\,dt\right\|
+  \left\|\int_0^1 \bigl[J(x_j + t\,s_j) - \Jstar\bigr]\,dt\right\|
   \leq L\,\|x_j - x^*\| + \frac{L}{2}\,\|s_j\|.
 \end{equation}
 Следовательно:
 \begin{equation}\label{eq:col_bound}
-  \|a_j\| = \|y_j - J^*\!s_j\|
+  \|a_j\| = \|y_j - \Jstar\!s_j\|
   \leq \left(L\,\|x_j - x^*\| + \frac{L}{2}\,\|s_j\|\right)\|s_j\|.
 \end{equation}
 
-\emph{Вариант~A (без дополнительных предположений):}
-\begin{equation}\label{eq:col_bound_A}
-  \|a_j\|^2 \leq L^2\left(\|x_j - x^*\| + \tfrac{1}{2}\,\|s_j\|\right)^2 \|s_j\|^2.
+По лемме~\ref{lem:step-bound} $\|s_j\|\le C_s\,\|x_j-x^{*}\|$ для всех
+$j=k-p,\ldots,k$. Подставляя в~\eqref{eq:col_bound}:
+\begin{equation}\label{eq:col_bound_general}
+  \|a_j\|^2 \leq L^2(1+C_s/2)^2\,\|x_j - x^*\|^2\,\|s_j\|^2
+  \;\le\; L^2(1+C_s/2)^2\,\rho_k^2\,\|s_j\|^2,
 \end{equation}
-
-\emph{Вариант~B (при $\|s_j\| \leq \|x_j - x^*\|$):}
-\begin{equation}\label{eq:col_bound_B}
-  \|a_j\| \leq \frac{3L}{2}\,\|x_j - x^*\|\,\|s_j\|,
-  \qquad
-  \|a_j\|^2 \leq \frac{9L^2}{4}\,\|x_j - x^*\|^2\,\|s_j\|^2.
-\end{equation}
-Условие $\|s_j\| \leq \|x_j - x^*\|$ формально установлено в
-лемме~\ref{lem:step-bound} (с константой $C_s \le 1$ при выборе радиуса
-$\delta_0 \le \delta_0^{*}$), и опирается на
-предположение~\ref{as:bj-bounded} о равномерной ограниченности
-$\|B_j^{-1}\| \le M$ в окрестности корня.
-В общем случае ($C_s > 1$) оценка~\eqref{eq:col_bound_B} верна с заменой
-константы $9L^2/4 \to L^2(1 + C_s/2)^2$.
-
-Суммируя по~$j$ (вариант~B):
+где $\rho_k = \max_j\|x_j-x^*\|$ из~\eqref{eq:rho-window}.
+Суммируя по~$j$ и пользуясь
+$\sum_j\|s_j\|^2 = \|S_p\|_F^2 \le (p+1)\,\sigma_{\max}^2(S_p)$:
 \begin{equation}\label{eq:A_bound}
-  \|A_k\|_F^2 \leq \frac{9L^2}{4}
-    \sum_{j=k-p}^{k} \|x_j - x^*\|^2\,\|s_j\|^2.
+  \|A_k\|_F^2 \;\le\; L^2(1+C_s/2)^2\,(p+1)\,\sigma_{\max}^2(S_p)\,\rho_k^2.
 \end{equation}
+Подставляя в~\eqref{eq:trace_bound}, получаем
+\begin{equation}\label{eq:Delta-compact}
+  \Delta_k \;\le\; \frac{\|A_k\|_F^2}{\sigma_{\min}^2(S_p)}
+  \;\le\; L^2(1+C_s/2)^2\,(p+1)\,\kappa_p^2\,\rho_k^2
+  \;=\; C_{\mathrm{SP}}^2\,\rho_k^2.
+\end{equation}
+Подстановка в~\eqref{eq:exact} даёт~\eqref{eq:bd_squared}.
+\end{proof}
 
-Подставляя~\eqref{eq:A_bound} в~\eqref{eq:trace_bound}
-и далее в~\eqref{eq:exact}:
-\[
-  \|E_{k+1}\|_F^2
-  \leq \|E_k\|_F^2 - \|E_k\,\Pi_k\|_F^2
-  + \frac{9L^2}{4\,\sigma_{\min}^2(S_p)}
-    \sum_{j=k-p}^{k} \|x_j - x^*\|^2\,\|s_j\|^2.
-\]
-Отбрасывая $-\|E_k\,\Pi_k\|_F^2 \leq 0$, получаем~\eqref{eq:bd_squared}.
+%% --- Следствие: подпространственная аппроксимация якобиана ---
 
-\medskip
-\textbf{Шаг~6: извлечение корня.}
-Из~\eqref{eq:bd_squared}:
+\begin{corollary}[Подпространственная аппроксимация якобиана]
+\label{cor:subspace-alignment}
+В условиях теоремы~\ref{thm:bd}
+\begin{equation}\label{eq:subspace_alignment}
+  \|E_{k+1}\,S_p\|_F \;\le\; L\,(1 + C_s/2)\,\sqrt{p+1}\,
+  \sigma_{\max}(S_p)\,\rho_k.
+\end{equation}
+В частности, $B_{k+1}$ аппроксимирует $\Jstar$ на всём подпространстве
+$\mathrm{col}\,S_p$ с точностью $O(\rho_k)$, зависящей лишь от локальной
+липшицевой константы и расстояния до корня (не от $\|E_k\|_F$ на
+$\mathrm{col}\,S_p$).
+\end{corollary}
+
+\begin{proof}
+По~\eqref{eq:Ek1_compact} $E_{k+1} = E_k\,\Pi_k^\perp + R_k$. Поскольку
+$\Pi_k^\perp S_p = 0$ (Шаг~2 доказательства теоремы~\ref{thm:bd}) и
+$G_p^{-1} G_p = I$,
 \[
-  \|E_{k+1}\|_F^2 \leq \|E_k\|_F^2 + \delta_k,
-  \qquad
-  \delta_k = \frac{9L^2}{4\,\sigma_{\min}^2(S_p)}
-    \sum_{j=k-p}^{k} \|x_j - x^*\|^2\,\|s_j\|^2.
+  E_{k+1}\,S_p
+  = E_k\,\Pi_k^\perp\,S_p + R_k\,S_p
+  = 0 + (Y_p - \Jstar\!S_p)\,G_p^{-1}\,S_p^\top S_p
+  = Y_p - \Jstar\!S_p.
 \]
-Для $a \geq 0$, $b \geq 0$ неравенство
-$\sqrt{a + b} \leq \sqrt{a} + \sqrt{b}$
-справедливо, поскольку $(\sqrt{a} + \sqrt{b})^2 = a + b + 2\sqrt{ab} \geq a + b$.
-Применяя с $a = \|E_k\|_F^2$, $b = \delta_k$:
-\[
-  \|E_{k+1}\|_F
-  \leq \sqrt{\|E_k\|_F^2 + \delta_k}
-  \leq \|E_k\|_F + \sqrt{\delta_k}
-  = \|E_k\|_F
-  + \frac{3L}{2\,\sigma_{\min}(S_p)}
-    \left(\sum_{j=k-p}^{k} \|x_j - x^*\|^2\,\|s_j\|^2\right)^{\!1/2}.
-\]
-Это даёт~\eqref{eq:bd_linear}.
+Оценка~\eqref{eq:A_bound} даёт~\eqref{eq:subspace_alignment}.
 \end{proof}
 
 %% --- Замечание: сравнение с классическим Бройденом ---
@@ -752,522 +669,230 @@ $\sqrt{a + b} \leq \sqrt{a} + \sqrt{b}$
 \begin{equation}\label{eq:bd_broyden_classic}
   \|E_{k+1}^{\mathrm{Br}}\|_F^2
   = \|E_k\|_F^2 - \frac{\|E_k\,s_k\|^2}{\|s_k\|^2}
-    + \frac{\|y_k - J^*\!s_k\|^2}{\|s_k\|^2}.
+    + \frac{\|y_k - \Jstar\!s_k\|^2}{\|s_k\|^2}.
 \end{equation}
-Сопоставим с точным разложением~\eqref{eq:exact_decomp}:
-\begin{enumerate}
-\item \textbf{Отрицательный член.}
-  В~\eqref{eq:bd_broyden_classic}: $\|E_k\,s_k\|^2 / \|s_k\|^2$~---
-  проекция ошибки на одно направление~$s_k$.
-  В~\eqref{eq:exact_decomp}: $\|E_k\,\Pi_k\|_F^2$~--- проекция
-  на $(p{+}1)$-мерное подпространство $\mathrm{col}\,S_p$.
-  По определению $\Pi_k$:
-  \[
-    \|E_k\,\Pi_k\|_F^2
-    \geq \left\|E_k\,\frac{s_k\,s_k^\top}{\|s_k\|^2}\right\|_F^2
-    = \frac{\|E_k\,s_k\|^2}{\|s_k\|^2},
-  \]
-  так как $s_k s_k^\top / \|s_k\|^2$~--- ортогональный проектор ранга~1,
-  являющийся ``частью'' проектора~$\Pi_k$ ранга~$(p{+}1)$.
-  Таким образом, SP-Broyden извлекает \textbf{не меньше} информации
-  из $E_k$ на каждом шаге.
+SP-Broyden имеет три взаимосвязанных структурных преимущества над
+классическим Бройденом:
 
-\item \textbf{Положительный член.}
-  В~\eqref{eq:bd_broyden_classic}: $\|y_k - J^* s_k\|^2 / \|s_k\|^2 =
-  O(\|x_k - x^*\|^2)$ по варианту~B (\eqref{eq:col_bound_B} при $p = 0$,
-  $\sigma_{\min}(S_0) = \|s_k\|$).
-  В~\eqref{eq:bd_squared}: сумма по $p{+}1$ шагам, делённая на
-  $\sigma_{\min}^2(S_p)$. Формально положительный член SP-Broyden может
-  быть больше классического в худшем случае~--- именно в~$1/\sigma_{\min}^2(S_p)$
-  раз; адаптивный выбор глубины в Алгоритме~\ref{alg:sp_broyden}
-  (порог $\operatorname{cond}(G_p) < \tau$) контролирует $\sigma_{\min}^2(S_p)$
-  снизу, а явная оценка~\eqref{eq:bd_linear} показывает, что после извлечения
-  корня обе формулы дают \emph{один и тот же асимптотический порядок}
-  $\|E_{k+1}\|_F \le \|E_k\|_F + O(\|x_k - x^*\|)$ при $x_k \to x^{*}$,
-  совпадающий с классическим bounded deterioration Бройдена~\cite{broyden1973}.
-  Прямое количественное доказательство того, что отрицательный член
-  $-\|E_k\Pi_k\|_F^2$ \emph{полностью} компенсирует возможный рост
-  положительного члена при произвольном $\sigma_{\min}(S_p)$
-  \emph{на одной итерации}, в общем случае отсутствует и здесь
-  не утверждается. Тем не менее преимущество SP-Broyden
-  над классическим Бройденом есть, и оно проявляется в трёх
-  взаимосвязанных формах, описанных ниже.
-
-\medskip\noindent
-\emph{(2.1) Структурное преимущество.} SP-обновление сохраняет $p$
-предыдущих секущих условий $B_{k+1} s_j = y_j$ для $j = k{-}p, \ldots, k{-}1$
-(теорема~\ref{thm:minimality}), тогда как классический Бройден~---
-лишь одно секущее условие на текущей итерации. Это содержательное
-отличие фиксируется разложением~\eqref{eq:exact_decomp} через проектор
-$\Pi_k$ ранга $p+1$ против ранга~$1$ у Бройдена и приводит к
-строгому неравенству
+\smallskip
+\noindent\textit{(i) Расширенный проектор ранга $p{+}1$.}
+В~\eqref{eq:bd_broyden_classic} вычитается проекция ошибки на
+одномерное направление~$s_k$, в~\eqref{eq:exact_decomp}~--- на
+$(p{+}1)$-мерное подпространство $\mathrm{col}\,S_p$. Поскольку
+$\mathrm{span}(s_k)\subset\mathrm{col}\,S_p$, имеем
+$\Pi_k - s_k s_k^\top/\|s_k\|^2 \succeq 0$ и
 \begin{equation}\label{eq:neg-term-dominance}
   \|E_k\,\Pi_k\|_F^2 \;\ge\; \frac{\|E_k\,s_k\|^2}{\|s_k\|^2},
 \end{equation}
-доказанному в пункте~1 настоящей ремарки. То есть на каждой
-итерации SP-Broyden \emph{снимает с матрицы ошибки $E_k$ как минимум
-столько же информации}, сколько и классический Бройден, а в типичной
-ситуации~--- строго больше (когда другие столбцы проектора $\Pi_k$
-имеют ненулевую компоненту вдоль $E_k$).
+причём неравенство строгое всякий раз, когда $E_k$ имеет нетривиальную
+проекцию на $\mathrm{col}\,S_p\setminus\mathrm{span}(s_k)$.
 
-\medskip\noindent
-\emph{(2.2) Контроль положительного члена через адаптивную глубину.}
-Адаптивный выбор глубины в Алгоритме~\ref{alg:sp_broyden} с порогом
-$\operatorname{cond}(G_p) < \tau$ обеспечивает равномерную невырожденность
-грамиана: $\sigma_{\min}^2(S_p) \ge \sigma_{\max}^2(S_p)/\tau$.
-В практически интересном режиме <<близких по длине шагов>>
-$\|s_j\| \asymp \|s_k\|$, отсюда
-$\sigma_{\max}^2(S_p) \le (p+1)\,\|s_k\|^2$, что даёт
-$\sigma_{\min}^2(S_p) \ge \|s_k\|^2 / \tau$ (с точностью до фактора
-$p+1$). Подставляя в~\eqref{eq:bd_squared} и сравнивая с классическим
-Бройденом, получаем
-\[
-  \Delta_k^{\mathrm{SP}}
-  \;\le\; \tau(p+1)\,\Delta_k^{\mathrm{Br}}\!\left(1 + o(1)\right),
-\]
-т.\,е.\ положительный член может вырасти не более чем в постоянное
-число раз, при том что отрицательный член растёт с $p$
-по~\eqref{eq:neg-term-dominance}. Эта оценка~--- мотивация
-порога $\tau = 10^{3}$, используемого в численных экспериментах
-\S\ref{sec:spb_numerics}.
+\smallskip
+\noindent\textit{(ii) Сохранение $p{+}1$ секущих условий.} По
+теореме~\ref{thm:minimality} $B_{k+1}\,s_j = y_j$ для всех
+$j = k{-}p,\ldots,k$, тогда как классический Бройден сохраняет лишь
+текущее равенство $B_{k+1}^{\mathrm{Br}} s_k = y_k$. Для $j < k$ возникает
+неконтролируемая невязка
+$B_{k+1}^{\mathrm{Br}} s_j - y_j = E_k\,s_j +
+(y_k - B_k s_k)\,(s_k^\top s_j/\|s_k\|^2)$, наследующая прошлую ошибку
+$E_k\,s_j$.
 
-\medskip\noindent
-\emph{(2.3) Асимптотическое и схемное преимущество.} Содержательное
-\emph{количественное} превосходство SP-Broyden проявляется не в
-upper bound на одну итерацию (где он совпадает по порядку с Бройденом),
-а в скорости выполнения условия Дэнниса--Море
-$\|E_k s_k\|/\|s_k\| \to 0$, обеспечивающего сверхлинейную сходимость
-\cite{dennis1974}: благодаря $p+1$ сохранённым секущим условиям оно
-выполняется существенно раньше, чем у классического Бройдена.
-В контексте варианта VIJI-Restarted для вариационных неравенств
-(глава~\ref{ch:sp-broyden-viji}) это превосходство квантифицируется
-явно: схема ${\rm VIJI{-}Restart} + {\rm SP{-}Broyden}$ достигает
-оптимальной скорости $\mathcal{O}(T^{-3/2})$
-(теоремы~\ref{thm:local-rate} и~\ref{thm:sp-afd}), тогда как
-${\rm VIQA{-}Broyden}$ с классическим Бройденом~---
-лишь $\mathcal{O}(T^{-1})$
-(\cite{Agafonov2024VIJI}; см.\ табл.~\ref{tab:compare}).
-Эмпирически (\S\ref{sec:spb_numerics}, \S\ref{sec:viji:numerics})
-это согласуется с измеренным ускорением в $1{,}7\text{--}2{,}5$ раза
-по числу итераций.
-\end{enumerate}
+\smallskip
+\noindent\textit{(iii) Подпространственная аппроксимация якобиана.}
+Прямое следствие~(ii)~--- corollary~\ref{cor:subspace-alignment}: на
+всём $(p{+}1)$-мерном подпространстве $\mathrm{col}\,S_p$ ошибка $E_{k+1}$
+оценивается локальной липшицевой константой и расстоянием до корня.
+Аналогичный безусловный $O(\rho_k)$-контроль для классического Бройдена
+существует только в одномерном направлении~$s_k$
+($\|E_{k+1}^{\mathrm{Br}} s_k\| = \|y_k - \Jstar\!s_k\| = O(\rho_k)\|s_k\|$);
+на $\mathrm{col}\,S_p\setminus\mathrm{span}(s_k)$ ошибка определяется
+глобальной историей.
+
+\smallskip
+Применение оценки~\eqref{eq:bd_squared} в схеме VIJI-Restarted даёт
+равномерную ограниченность $\|B_k - \Jstar\|_F$ внутри сегмента
+(cor.~\ref{cor:sp-in-segment} в главе~\ref{ch:sp-broyden-viji}).
 \end{remark}
 
 
 % ============================================================
-\section{Глобализация: Armijo line search}\label{sec:globalization}
+\section{Глобализация квазиньютоновских методов}\label{sec:globalization}
 % ============================================================
 
-В Алгоритме~\ref{alg:sp_broyden} и в теореме~\ref{thm:bd}
-рассматривался <<чистый>> квазиньютоновский шаг
-$x_{k+1} = x_k + d_k$ с $d_k = -B_k^{-1} F(x_k)$. Соответствующая
-теория (минимальность обновления, ограниченная деградация)
-имеет существенно \emph{локальный} характер: гарантии
-сверхлинейности по Деннису--Море~\cite{dennis1974} требуют
-близости стартовой точки $x_0$ к корню $x^{*}$ системы $F(x) = 0$.
-Чтобы устранить это ограничение и обеспечить
-\emph{глобальную сходимость} итераций из произвольного~$x_0$
-из заданного $\psi$-сублевельного множества, мы дополняем
-SP-Broyden демпфированием шага по правилу Армихо~\cite{armijo1966}
-(альтернативой служат двусторонние условия Вольфа~\cite{wolfe1969},
-обсуждаемые в~\cite[\S 3.1]{bfgs}, но в нелинейно-системной постановке
-условие Армихо достаточно)
-на естественной merit-функции для нелинейных систем.
+Локальная теория $\S\ref{sec:sp-broyden-proof}$ (а также параллельная
+теория для SS-$\mathcal{U}$ в гл.~\ref{ch:symmetric}) гарантирует
+$Q$-сверхлинейную сходимость лишь \emph{в окрестности} решения. Для
+глобальной сходимости из произвольной стартовой точки квазиньютоновская
+итерация дополняется демпфированием шага по правилу
+Армихо~\cite{armijo1966} (альтернатива~--- условия Вольфа~\cite{wolfe1969,bfgs};
+для рассматриваемого класса задач условия Армихо достаточно). Ниже
+конструкция формулируется в общем виде, применимом и к SP-Broyden
+(гл.~\ref{ch:sp-broyden-theory}, $F(x)=0$), и к
+SS-$\mathcal{U}$ (гл.~\ref{ch:symmetric}, $\min f$).
 
-\paragraph{Merit-функция и её градиент.}
-Для системы $F\colon \mathbb{R}^n \to \mathbb{R}^n$ положим
-\begin{equation}\label{eq:merit-psi}
-  \psi(x) \;:=\; \tfrac{1}{2}\,\|F(x)\|^{2},
+\paragraph{Общая постановка.}
+Пусть $g\colon\RR^n\to\RR^n$~--- ``невязка'' задачи (для системы $F=0$
+имеем $g\equiv F$; для минимизации $f$~--- $g\equiv\nabla f$), и пусть
+$A(x)$~--- её якобиан-подобный оператор ($A=\nabla F$ в первом случае,
+$A=\nabla^2 f$ во втором; в обоих случаях корень $x^{*}$ задачи
+характеризуется условием $g(x^{*})=0$). Квазиньютоновский метод строит
+последовательность $\{B_k\}$, аппроксимирующую $A_k:=A(x_k)$, и
+шаг $d_k = -B_k^{-1} g(x_k)$. Обозначим $E_k = B_k - A_k$~--- ошибка
+аппроксимации.
+
+Глобализация требует merit-функции $\phi\colon\RR^n\to\RR$,
+удовлетворяющей условиям:
+\begin{enumerate}
+  \item[(i)] $\phi\in C^{1}(\RR^n)$, $\nabla\phi$ непрерывен по Липшицу
+        с константой $L_\phi$ на сублевельном множестве
+        $\mathcal{L}_0 := \{x : \phi(x)\le\phi(x_0)\}$;
+  \item[(ii)] $\mathcal{L}_0$ ограничено и $\inf_{\RR^n}\phi > -\infty$;
+  \item[(iii)] стационарные точки $\phi$ в окрестности $x^{*}$ совпадают
+        с корнями $g$.
+\end{enumerate}
+Два частных случая, покрывающих обе главы:
+\begin{equation}\label{eq:merit-cases}
+  \text{(гл.~\ref{ch:sp-broyden-theory})}\;\;
+  \phi(x) = \tfrac{1}{2}\,\|F(x)\|^{2},\;\;
+  \nabla\phi = J(x)^{\top} F(x);
   \qquad
-  \nabla\psi(x) \;=\; J(x)^{\top} F(x),
+  \text{(гл.~\ref{ch:symmetric})}\;\;
+  \phi(x) = f(x),\;\;
+  \nabla\phi = \nabla f(x).
 \end{equation}
-где $J(x) = \nabla F(x)$~--- якобиан. Корень системы
-$F(x^{*}) = 0$ автоматически является стационарной точкой
-$\psi$, т.\,е.\ $\nabla\psi(x^{*}) = 0$. При невырожденном
-$J(x^{*})$ обратное верно: всякая стационарная точка $\psi$,
-лежащая в окрестности $x^{*}$, является корнем~$F$.
-Эта конструкция стандартна в теории квазиньютоновских методов
-для нелинейных уравнений; см.\ также~\cite{dennis1996, fukushima1992}.
+В первом случае требование~(iii) выполнено при невырожденном $J(x^{*})$;
+во втором случае оно тривиально ($\nabla\phi = g$).
 
 \paragraph{Условие убывания (Armijo).} Зафиксируем константы
 $c_1 \in (0, 1/2)$ и $\rho \in (0, 1)$ (типично $c_1 = 10^{-4}$,
-$\rho = 1/2$). Алгоритм глобализации (Алгоритм~\ref{alg:sp_broyden_ls})
-заменяет строку $x_{k+1} \leftarrow x_k + d_k$
-в Алгоритме~\ref{alg:sp_broyden} на backtracking-поиск шага
-$\alpha_k = \rho^{j_k}$, где $j_k \in \mathbb{Z}_{\ge 0}$~---
-наименьшее целое, для которого выполняется неравенство Армихо
+$\rho = 1/2$). Алгоритм глобализации (Алгоритм~\ref{alg:qn_armijo})
+заменяет полный шаг $x_{k+1} \leftarrow x_k + d_k$ на
+$x_{k+1} = x_k + \alpha_k d_k$ с $\alpha_k = \rho^{j_k}$, где
+$j_k\in\ZZ_{\ge 0}$~--- наименьшее целое, при котором выполнено
+неравенство Армихо
 \begin{equation}\label{eq:armijo}
-  \psi(x_k + \alpha_k d_k)
+  \phi(x_k + \alpha_k d_k)
   \;\le\;
-  \psi(x_k) + c_1\,\alpha_k\,\nabla\psi(x_k)^{\top} d_k.
+  \phi(x_k) + c_1\,\alpha_k\,\nabla\phi(x_k)^{\top} d_k.
 \end{equation}
-SP-обновление по~\eqref{eq:sp_update} применяется к парам
-$s_k = \alpha_k d_k$, $y_k = F(x_{k+1}) - F(x_k)$.
+Соответствующее квазиньютоновское обновление применяется к секущей паре
+$s_k = \alpha_k d_k$, $y_k = g(x_{k+1}) - g(x_k)$.
 
 \begin{algorithm}
-\caption{SP-Broyden + Armijo (глобализованная версия)}
-\label{alg:sp_broyden_ls}
+\caption{Шаблон ``квазиньютоновский метод $+$ Armijo''}
+\label{alg:qn_armijo}
 \begin{algorithmic}
-\Require параметры Алгоритма~\ref{alg:sp_broyden},
-         $c_1 \in (0,1/2)$, $\rho \in (0,1)$,
-         $\alpha_{\min} > 0$ (минимальный шаг)
-\State $B_0 \leftarrow \widetilde{B}$,\quad $k \leftarrow 0$
-\While{$\|F(x_k)\| \ge \varepsilon$}
-  \State Решить $B_k\,d_k = -F(x_k)$
-  \State $\alpha_k \leftarrow 1$;\ \ $g_k \leftarrow J_k^{\top} F(x_k)$
-         \Comment{$g_k$ нужен только для проверки~\eqref{eq:descent}}
-  \While{$\psi(x_k + \alpha_k d_k) > \psi(x_k) + c_1\,\alpha_k\,g_k^{\top} d_k$
+\Require задача $g(x)=0$ и merit-функция $\phi$ как
+         в~\eqref{eq:merit-cases};\ $x_0\in\RR^n$;\ $B_0$;\
+         $c_1 \in (0,1/2)$, $\rho \in (0,1)$, $\alpha_{\min}>0$, $\varepsilon>0$
+\State $k \leftarrow 0$
+\While{$\|g(x_k)\| \ge \varepsilon$}
+  \State Решить $B_k\,d_k = -g(x_k)$
+  \State $\alpha_k \leftarrow 1$
+  \While{$\phi(x_k + \alpha_k d_k) > \phi(x_k) + c_1\,\alpha_k\,\nabla\phi(x_k)^{\top} d_k$
          \textbf{ and } $\alpha_k > \alpha_{\min}$}
     \State $\alpha_k \leftarrow \rho\,\alpha_k$
   \EndWhile
-  \State $x_{k+1} \leftarrow x_k + \alpha_k\,d_k$
-  \State $s_k \leftarrow \alpha_k\,d_k$,\ \
-         $y_k \leftarrow F(x_{k+1}) - F(x_k)$
-  \State выполнить SP-обновление, как в Алгоритме~\ref{alg:sp_broyden}
+  \State $x_{k+1} \leftarrow x_k + \alpha_k\,d_k$,\quad
+         $s_k \leftarrow \alpha_k d_k$,\quad
+         $y_k \leftarrow g(x_{k+1}) - g(x_k)$
+  \State выполнить квазиньютоновское обновление $B_k \to B_{k+1}$
+         (Алгоритм~\ref{alg:sp_broyden} или Алгоритм~\ref{alg:ss_sr1})
   \State $k \leftarrow k+1$
 \EndWhile
 \Return $x_k$
 \end{algorithmic}
 \end{algorithm}
 
-\begin{remark}[Дешёвая проверка~\eqref{eq:armijo}]\label{rem:armijo-cost}
-В строгой реализации Алгоритма~\ref{alg:sp_broyden_ls} требуется один
-матрично-векторный продукт $J_k^{\top} F(x_k)$ на каждой внешней итерации.
-Если якобиан $J_k = \nabla F(x_k)$ не доступен в явном виде
-(например, в схеме SP-Broyden используется только $F$-оракул),
-то достаточно более слабого аналога <<неточного Армихо>>~\cite{dennis1996}:
-правую часть~\eqref{eq:armijo} заменяют на
-$\psi(x_k) - c_1\,\alpha_k\,\|F(x_k)\|^{2}$,
-что соответствует подстановке $g_k^{\top} d_k \approx -\|F(x_k)\|^{2}$
-(точное равенство при $B_k = J_k$).
-Все последующие утверждения сохраняются с очевидной заменой $\eta \to 1 - \eta$.
-\end{remark}
-
-\paragraph{Условие достаточного убывания направления.}
-Чтобы~\eqref{eq:armijo} вообще имело смысл при конечном $\alpha_k > 0$,
-направление $d_k$ должно быть направлением убывания $\psi$ в точке~$x_k$,
-т.\,е.\ $g_k^{\top} d_k < 0$. Следующая лемма даёт количественную форму
-этого условия в терминах ошибки якобиана $E_k := B_k - J_k$, оцениваемой
-теоремой~\ref{thm:bd}.
-
-\begin{lemma}[Условие угла для $d_k$]\label{lem:descent}
-Пусть $J_k$ обратим, обозначим $\sigma_k := \sigma_{\min}(J_k) > 0$
-и $\beta_k := \|J_k\|$. Если ошибка якобиана удовлетворяет
+\begin{lemma}[Условие угла для $d_k$, \cite{dennis1996,bfgs}]\label{lem:descent}
+Пусть $A_k$ обратим с $\sigma_k := \sigma_{\min}(A_k) > 0$,
+$\beta_k := \|A_k\|$, и существует $\eta\in(0,1/2)$ такое, что
 \begin{equation}\label{eq:bd-small}
-  \|E_k\| \;\le\; \eta\,\sigma_k
-  \qquad \text{для некоторого } \eta \in (0, 1),
+  \|E_k\| \;\le\; \eta\,\sigma_k.
 \end{equation}
-то $B_k$ обратим и направление $d_k = -B_k^{-1} F(x_k)$ удовлетворяет
+Тогда $B_k$ обратим, $\sigma_{\min}(B_k) \ge (1-\eta)\sigma_k$, и
+шаг $d_k = -B_k^{-1} g(x_k)$ удовлетворяет поточечному условию угла
 \begin{equation}\label{eq:descent}
-  -\,g_k^{\top} d_k
+  -\,\nabla\phi(x_k)^{\top} d_k
   \;\ge\;
-  \frac{1 - \eta}{(1 + \eta)\,\beta_k\,/\,\sigma_k}\;
-  \|g_k\|\,\|d_k\|.
+  \eta_{0,k}\,\|\nabla\phi(x_k)\|\,\|d_k\|,
+  \qquad
+  \eta_{0,k} \;:=\; \frac{1-2\eta}{1+\eta}\,\kappa(A_k)^{-1} > 0.
 \end{equation}
-В частности, угол между $d_k$ и антиградиентом $-g_k$ удовлетворяет
-$\cos\theta_k \;\ge\; \eta_0
-:= \frac{(1-\eta)\,\sigma_k}{(1+\eta)\,\beta_k}
-= \frac{1-\eta}{1+\eta}\,\kappa(J_k)^{-1} > 0$.
 \end{lemma}
 
 \begin{proof}
-Запишем $J_k = B_k - E_k$ и $J_k^{\top} = B_k^{\top} - E_k^{\top}$. Тогда
-\[
-  -g_k^{\top} d_k
-  \;=\; F(x_k)^{\top} J_k\,B_k^{-1} F(x_k)
-  \;=\; F(x_k)^{\top}\!\big(I - E_k B_k^{-1}\big) F(x_k)
-  \;=\; \|F(x_k)\|^{2} - F(x_k)^{\top} E_k\,B_k^{-1} F(x_k).
-\]
-По~\eqref{eq:bd-small} имеем $\|E_k B_k^{-1}\| \le \|E_k\|/\sigma_{\min}(B_k)$,
-а из равенства $B_k = J_k + E_k$ и стандартной оценки на возмущение
-сингулярных значений: $\sigma_{\min}(B_k) \ge \sigma_k - \|E_k\| \ge (1-\eta)\sigma_k > 0$,
-так что $B_k$ обратим и $\|E_k B_k^{-1}\| \le \eta/(1-\eta)$. Отсюда
-\[
-  -g_k^{\top} d_k
-  \;\ge\;
-  \big(1 - \tfrac{\eta}{1-\eta}\big)\,\|F(x_k)\|^{2}
-  \;=\; \tfrac{1 - 2\eta}{1-\eta}\,\|F(x_k)\|^{2}.
-\]
-В предположении $\eta < 1/2$ правая часть положительна.
-Для верхней оценки $\|d_k\|$:
-$\|d_k\| = \|B_k^{-1} F(x_k)\| \le (1-\eta)^{-1}\sigma_k^{-1}\,\|F(x_k)\|$.
-Для верхней оценки $\|g_k\| = \|J_k^{\top} F(x_k)\| \le \beta_k\,\|F(x_k)\|$.
-Подставляя обе оценки в произведение $\|g_k\|\,\|d_k\|$ и сравнивая
-с $-g_k^{\top} d_k \ge \tfrac{1-2\eta}{1-\eta}\,\|F(x_k)\|^{2}$,
-получаем~\eqref{eq:descent} с указанной константой
-(после простого алгебраического упрощения относительно $\eta$,
-дающего $1-\eta$ в числителе и $1+\eta$ в знаменателе с точностью до
-домножения на положительный множитель).
-\qedhere
+По неравенству Вейля $\sigma_{\min}(B_k)\ge\sigma_k-\|E_k\|\ge(1-\eta)\sigma_k$,
+откуда $\|E_k B_k^{-1}\|\le\eta/(1-\eta)$.
+
+\emph{Случай (гл.~\ref{ch:sp-broyden-theory}):}
+$\nabla\phi(x_k)^{\top}d_k = -F^{\top}A_k B_k^{-1}F = -F^{\top}(I-E_k B_k^{-1})F$,
+откуда $-\nabla\phi^{\top}d_k\ge\tfrac{1-2\eta}{1-\eta}\|F\|^2$;
+подстановка $\|d_k\|\le((1-\eta)\sigma_k)^{-1}\|F\|$ и
+$\|\nabla\phi\|\le\beta_k\|F\|$ даёт~\eqref{eq:descent}.
+
+\emph{Случай (гл.~\ref{ch:symmetric}):}
+$\nabla\phi(x_k)^{\top}d_k = -\nabla f^{\top}B_k^{-1}\nabla f$;
+при $A_k=\nabla^2 f(x_k)\succ 0$ и $\|E_k\|\le\eta\sigma_k$ матрица $B_k$
+положительно определена, и $-\nabla\phi^{\top}d_k\ge\sigma_{\min}(B_k^{-1})\|\nabla f\|^2$.
+Аналогичное упрощение приводит к~\eqref{eq:descent}.
 \end{proof}
 
-\begin{remark}[Связь с теоремой~\ref{thm:bd}]\label{rem:bd-implies-descent}
-Условие~\eqref{eq:bd-small} автоматически выполнено для достаточно
-больших~$k$ при следующих стандартных предпосылках: (i)~$J$
-непрерывна по Липшицу с константой~$L$; (ii)~SP-Broyden запускается
-из стартовой точки, обеспечивающей $\sup_k \|x_k - x^{*}\| < \infty$
-(в частности, $\psi$-сублевельное множество компактно); (iii)~грамиан
-$G_p$ равномерно невырожден. Действительно, теорема~\ref{thm:bd}
-даёт $\|E_{k+1}\|_F \le \|E_k\|_F + L\,\|s_k\|$, откуда после
-суммирования и при достаточной близости к корню $\|E_k\| \le \eta\sigma_k$
-для $k \ge k_0$. На начальных итерациях ($k < k_0$) условие
-не гарантировано~--- именно поэтому в Алгоритме~\ref{alg:sp_broyden_ls}
-предусмотрен fallback $\alpha_k > \alpha_{\min}$: если backtracking
-не находит допустимого~$\alpha_k$, происходит сброс
-$B_k \leftarrow \widetilde{B}$ (как в режиме $\mathtt{accumulate} =
-\mathtt{false}$ Алгоритма~\ref{alg:sp_broyden}) и итерация повторяется.
+\begin{remark}[Положительная определённость для гл.~\ref{ch:symmetric}]
+\label{rem:sr1-pd}
+Условие~\eqref{eq:bd-small} для гл.~\ref{ch:symmetric} включает не только
+ограниченность $\|E_k\|$, но и сохранение знака собственных чисел $B_k$
+(SR1 в общем случае положительной определённости не сохраняет;
+SS-SR1 наследует это ограничение). На практике для SR1-семейства при
+нарушении descent-условия применяется fallback на $-\nabla f$ или
+trust-region схема; см.~обсуждение в~\cite[\S 6.2]{bfgs}.
 \end{remark}
 
 \paragraph{Глобальная сходимость.}
-Следующая теорема~--- адаптация классического результата
-Цоутендейка~\cite{zoutendijk1970, bfgs} к нашей схеме.
-
-\begin{theorem}[Глобальная сходимость SP-Broyden + Armijo]
-\label{thm:global-conv}
-Пусть выполнены условия:
-\begin{enumerate}
-\item[(\textbf{A1})] $F\in C^{1}(\mathbb{R}^n)$, якобиан $J = \nabla F$
-      непрерывен по Липшицу с константой~$L$ на сублевельном множестве
-      $\mathcal{L}_0 := \{x : \psi(x) \le \psi(x_0)\}$, и $\mathcal{L}_0$
-      ограничено;
-\item[(\textbf{A2})] существует $\eta \in (0, 1/2)$ такой, что
-      условие~\eqref{eq:bd-small} выполнено для всех $k$
-      (или, эквивалентно, для всех $k \ge k_0$ после конечного числа
-      перезагрузок $B_k \leftarrow \widetilde{B}$);
-\item[(\textbf{A3})] $\sup_k \kappa(J_k) \le \kappa^{*} < \infty$
-      на $\mathcal{L}_0$.
-\end{enumerate}
-Тогда последовательность $\{x_k\}$, порождённая
-Алгоритмом~\ref{alg:sp_broyden_ls}, удовлетворяет
-\begin{equation}\label{eq:zoutendijk}
-  \sum_{k=0}^{\infty} \cos^{2}\!\theta_k \cdot \|g_k\|^{2}
-  \;<\; \infty,
-  \qquad
-  \cos\theta_k := \frac{-\,g_k^{\top} d_k}{\|g_k\|\,\|d_k\|}
-  \;\ge\; \eta_0 > 0,
+\begin{theorem}[Глобальная сходимость]\label{thm:global-conv}
+Пусть merit-функция $\phi$ удовлетворяет условиям (i)--(iii) выше,
+$\bar\kappa := \sup_{x\in\mathcal{L}_0}\kappa(A(x)) < \infty$, и
+условие~\eqref{eq:bd-small} с $\eta\in(0,1/2)$ выполнено для всех $k$
+(возможно, после конечного числа сбросов $B_k\leftarrow B_0$). Положим
+\begin{equation}\label{eq:eta-bar}
+  \bar\eta_0 \;:=\; \frac{1-2\eta}{1+\eta}\,\bar\kappa^{-1} \;>\; 0.
 \end{equation}
-откуда $\|g_k\| \to 0$ при $k \to \infty$. В частности, любая предельная
-точка $x^{*}$ последовательности $\{x_k\}$ удовлетворяет
-$J(x^{*})^{\top} F(x^{*}) = 0$. Если, кроме того, $J(x^{*})$ невырожден,
-то $F(x^{*}) = 0$.
+По лемме~\ref{lem:descent} $\eta_{0,k}\ge\bar\eta_0$ для всех $k$.
+Тогда последовательность $\{x_k\}$, порождённая
+Алгоритмом~\ref{alg:qn_armijo}, удовлетворяет
+$\sum_{k}\cos^2\theta_k\|\nabla\phi(x_k)\|^2 < \infty$ с
+$\cos\theta_k\ge\bar\eta_0>0$, откуда $\|\nabla\phi(x_k)\|\to 0$.
+В частности, любая предельная точка $x^{*}$ удовлетворяет
+$\nabla\phi(x^{*})=0$; для гл.~\ref{ch:sp-broyden-theory} при
+невырожденном $J(x^{*})$ это эквивалентно $F(x^{*})=0$.
 \end{theorem}
 
 \begin{proof}
-Стандартное доказательство Цоутендейка
-(см.~\cite[теорема~3.2]{bfgs}) опирается на три ингредиента:
-(i)~условие угла~\eqref{eq:descent}, которое в нашей постановке даётся
-леммой~\ref{lem:descent} с $\eta_0 = (1-\eta)/((1+\eta)\kappa^{*})$;
-(ii)~достижимость условия Армихо~\eqref{eq:armijo} за конечное число
-backtracking-шагов, что гарантировано $L$-гладкостью~$\nabla\psi$
-на $\mathcal{L}_0$ и ведёт к нижней оценке шага
-$\alpha_k \ge \alpha_{*} := 2\rho(1-c_1)\,\eta_0\,\sigma_{*}^{2}/L_{\psi}$,
-где $L_{\psi}$~--- липшицева константа $\nabla\psi$ на~$\mathcal{L}_0$
-и $\sigma_{*} := \min_{x \in \mathcal{L}_0}\sigma_{\min}(J(x))$;
-(iii)~монотонность $\psi(x_k)$ и её ограниченность снизу нулём,
-дающие
-$\sum_{k} \big(\psi(x_k) - \psi(x_{k+1})\big) = \psi(x_0) - \lim_k \psi(x_k) < \infty$.
-По~\eqref{eq:armijo} каждая разность не меньше
-$c_1 \alpha_{*}\,\cos\theta_k\,\|g_k\|\,\|d_k\| \ge
- c_1\alpha_{*}\eta_0\,\|g_k\|^{2}/\beta^{*}$ (где
-$\beta^{*} = \max_{\mathcal{L}_0}\|J\|$),
-что и даёт~\eqref{eq:zoutendijk} вместе с $\|g_k\| \to 0$.
-Предельный переход и невырожденность $J(x^{*})$
-дают $F(x^{*}) = 0$.
-\qedhere
+Стандартный аргумент Цоутендейка~\cite{zoutendijk1970}: лемма~\ref{lem:descent}
+даёт условие угла~\eqref{eq:descent}; $L_\phi$-гладкость $\nabla\phi$ на
+$\mathcal{L}_0$ обеспечивает нижнюю оценку шага в~\eqref{eq:armijo};
+монотонное убывание $\phi$ и его ограниченность снизу замыкают
+суммирование. Подробности~--- \cite[Th.~3.2]{bfgs}.
 \end{proof}
-
-\begin{remark}[Сохранение локальной сверхлинейности]\label{rem:unit-step}
-В стандартной теории глобализации квазиньютоновских методов
-(\cite[\S11.2]{bfgs}; \cite[\S5.2]{dennis1996}) показывается, что
-при $\|E_k\| \to 0$ и условии Деннис--Море единичный шаг $\alpha_k = 1$
-в~\eqref{eq:armijo} принимается \emph{асимптотически всегда}.
-Следовательно, Алгоритм~\ref{alg:sp_broyden_ls} наследует от
-Алгоритма~\ref{alg:sp_broyden} локальную сверхлинейную
-скорость теоремы~\ref{thm:bd}, не теряя при этом глобальной
-сходимости из теоремы~\ref{thm:global-conv}: <<плата>> за
-глобализацию~--- лишь конечное число backtracking-шагов на
-начальной (далёкой от $x^{*}$) фазе.
-\end{remark}
 
 \begin{remark}[Связь с регуляризацией шагом в схеме VIJI]
 \label{rem:viji-reg}
-В главе~\ref{ch:sp-broyden-viji} (см.\ формулу схемы итерации
-в~\S\ref{sec:viji:numerics}) для вариационных неравенств используется
-альтернативная форма глобализации~--- адаптивное демпфирование шага
-$d_k = -(B_k + \beta_k I)^{-1} F(x_k)$ с $\beta_k =
-\max(\beta_{\min},\, L_1\|d_{k-1}\|)$. Эта конструкция~---
-дискретный аналог метода Левенберга--Марквардта~\cite{marquardt1963},
-естественный для VI с сильной монотонностью: при больших $\beta_k$
-шаг приближается к проекционному (с фиксированной длиной),
-что обеспечивает невозрастание $\psi$ глобально, а при $\beta_k \to 0$
-восстанавливается чистый SP-Broyden шаг и его сверхлинейная асимптотика.
-Развёрнутый анализ этой формы глобализации в общем VI-случае
-выходит за рамки настоящей работы; здесь мы ограничиваемся замечанием,
-что Алгоритм~\ref{alg:sp_broyden_ls} (line search) и схема
-с $\beta_k$-демпфированием из~\S\ref{sec:viji:numerics}~--- два варианта
-одной идеи (траст-регион
-неявно через $\beta_k$ vs.\ явный поиск шага вдоль направления),
-обсуждаемой в литературе по квазиньютоновским методам с
-гарантиями глобальной сходимости~\cite{dennis1996, bfgs}.
+В главе~\ref{ch:sp-broyden-viji} (\S\ref{sec:viji:numerics}) для
+вариационных неравенств вместо линейного поиска используется адаптивное
+демпфирование $d_k = -(B_k + \beta_k I)^{-1} F(x_k)$, $\beta_k =
+\max(\beta_{\min},\, L_1\|d_{k-1}\|)$~--- дискретный аналог
+Левенберга--Марквардта~\cite{marquardt1963}: большие $\beta_k$
+дают почти-проекционный шаг (глобальное невозрастание $\phi$), малые
+восстанавливают чистый SP-Broyden. Алгоритм~\ref{alg:qn_armijo}
+(линейный поиск) и $\beta_k$-демпфирование~\S\ref{sec:viji:numerics}~---
+два инварианта одной идеи (явный поиск шага vs.\ trust-region),
+обсуждаемой в~\cite{dennis1996, bfgs}.
 \end{remark}
 
 
 % ============================================================
-\section{Численные эксперименты}\label{sec:spb_numerics}
+\section{Limited-memory: Шерман--Моррисон и L-SP-Broyden}\label{sec:highdim}
 % ============================================================
-
-Для экспериментальной проверки доказанных выше свойств сравним три метода
-ранг-1 обновлений якобиана при решении $F(x) = 0$ с $B_0 = I$:
-классический Бройден ($v_k = s_k$), Андерсон (пересборка $B$ из~$I$ по окну
-из~$m$ секущих) и SP-Broyden ($v_k = S_p(S_p^\top S_p)^{-1} e_1$,
-сохранение $p$ прошлых секущих условий).
-
-\paragraph{Тестовые задачи.}
-Используются две стандартные нелинейные системы размерности~$n = 100$
-из набора Море--Гарбов--Хилстрём~\cite{more1981}:
-\begin{itemize}
-\item \textbf{Discrete BVP}: дискретизация краевой задачи
-      $u''(t) + (u + t + 1)^3 / 2 = 0$, $u(0) = u(1) = 0$
-      с начальным приближением $x_0^{(i)} = 0{,}1 \cdot t_i(t_i - 1)$,
-      $t_i = i/(n+1)$.
-\item \textbf{Broyden Banded}: симметричная банда ширины~$7$ с кубической
-      нелинейностью по диагонали,
-      $x_0 = -0{,}1 \cdot \mathbf{1}$.
-\end{itemize}
-Параметры обновлений: $m = 10$ (Андерсон), $p \le 10$ с адаптивным
-выбором по условности грамиана $\mathrm{cond}(S_p^\top S_p) < 10^3$
-(SP-Broyden); для классического Бройдена $m = 0$.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\textwidth]{fig_sp_broyden_conv.pdf}
-\caption{Сходимость $\|F(x_k)\|$ классического Бройдена, Андерсона
-  и SP-Broyden на двух тестовых задачах. Слева~--- по итерациям,
-  справа~--- по числу вызовов~$F$. Пунктир~--- уровень $10^{-10}$.}
-\label{fig:spb_conv}
-\end{figure}
-
-\paragraph{Результаты.}
-На Discrete BVP (Рис.~\ref{fig:spb_conv}, первая строка) SP-Broyden
-достигает точности $\|F\| < 10^{-15}$ за $\sim 180$ итераций против
-$\sim 430$ у классического Бройдена и полной стагнации у Андерсона
-(превышение лимита в $500$ итераций при $\|F\| \sim 10^{-8}$).
-Ускорение SP-Broyden относительно Бройдена составляет~$\sim 2{,}4\times$
-в терминах итераций и~$\sim 2{,}3\times$ в терминах~$F$-вызовов
-(стоимость одного вызова у обоих методов совпадает).
-
-На Broyden Banded (вторая строка) разрыв качественно иной:
-классический Бройден и Андерсон расходятся (уходят в~$+\infty$),
-а SP-Broyden стабильно сходится до $\|F\| \sim 5 \cdot 10^{-13}$
-за~$\sim 60$ итераций. Причина~--- контроль условности грамиана
-$S_p^\top S_p$ в SP-Broyden: при пороге $10^3$ окно автоматически
-сужается, что предотвращает взрывной рост $\|B_k\|$, характерный
-для Андерсона на этой задаче.
-
-\paragraph{Связь с теорией.}
-Наблюдаемые результаты соответствуют доказанному в
-теореме~\ref{thm:bd} точному разложению bounded deterioration
-$\|E_{k+1}\|_F^2 = \|E_k\|_F^2 - \|E_k\Pi_k\|_F^2 + \Delta_k$
-с проектором ранга~$p{+}1$ и строгому неравенству
-$\|E_k\Pi_k\|_F^2 \ge \|E_k s_k\|^2/\|s_k\|^2$
-(\eqref{eq:neg-term-dominance}): на каждой итерации SP-Broyden
-снимает с матрицы ошибки не меньше информации, чем классический
-Бройден, а в типичной ситуации~--- строго больше за счёт
-$p$ дополнительных направлений в проекторе. Это превращается
-в заметное ускорение сходимости в практическом диапазоне
-точности $10^{-10}$--$10^{-15}$. Разрыв особенно выражен на задачах,
-где классический Бройден \emph{расходится}~--- SP-Broyden остаётся
-устойчивым благодаря инвариантности индуктивного секущего условия
-$B_k s_j = y_j$ для $j$ в окне памяти (теорема~\ref{thm:minimality}).
-
-\paragraph{Эволюция аппроксимации якобиана.}
-Прямая численная проверка bounded deterioration~--- эволюция нормы
-ошибки $\|B_k - J(x_k)\|_F$ по итерациям (Рис.~\ref{fig:spb_jacerr}).
-На Discrete BVP, $n=100$, в финальной точке оба метода выходят на сравнимую
-норму ошибки ($\|B-J\|_F \approx 5{,}7$ для SP-Broyden и $\approx 7{,}4$ для
-классического Бройдена), но за разное число итераций: $170$ против $384$.
-Правая панель показывает скалярную величину $\|E_k \Pi_k\|_F$~--- объём
-ошибки, снимаемой проектором $\Pi_k$ на текущей итерации. У классического
-Бройдена $\Pi_k = s_k s_k^\top/(s_k^\top s_k)$ имеет ранг 1, и $\|E_k\Pi_k\|_F$
-в точности равно $\|E_k s_k\|/\|s_k\|$~--- одна координата ошибки. У SP-Broyden
-с $p\le 10$ проектор $\Pi_k = \widehat S_p(\widehat S_p^\top \widehat S_p)^{-1}
-\widehat S_p^\top$ имеет ранг $p+1\le 11$ и снимает в среднем на 1--1{,}5
-порядка больше ошибки на каждом шаге, что согласуется с
-неравенством~\eqref{eq:neg-term-dominance} и точным
-разложением~\eqref{eq:exact_decomp}.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\textwidth]{fig_sp_broyden_jacerr.pdf}
-\caption{Discrete BVP, $n=100$. Слева~--- $\|B_k - J(x_k)\|_F$ по итерациям
-для классического Бройдена ($p=0$) и SP-Broyden ($p\le 5$, $p\le 10$);
-справа~--- норма $\|E_k \Pi_k\|_F$ ошибки, снимаемой проектором~$\Pi_k$ на
-итерации~$k$. Якобиан $J(x_k)$ вычислен аналитически; см.~скрипт
-\texttt{diag\_sp\_broyden.py} (\S\ref{ch:reproducibility}).}
-\label{fig:spb_jacerr}
-\end{figure}
-
-\paragraph{Зависимость от глубины окна $p$.}
-Чтобы проверить роль параметра~$p$ как такового (а не адаптивного
-порога), на Рис.~\ref{fig:spb_pvar} приведены кривые сходимости
-для $p\in\{1,2,5,10,20\}$ на тех же двух задачах. На Discrete BVP
-переход от $p=1$ к $p=2$ ускоряет сходимость на $\sim 9\%$
-($204\to 187$ итераций), переход $p=2\to 5$~--- ещё на $\sim 9\%$
-($187\to 170$); дальнейшее увеличение $p\in\{10,20\}$ численно не
-помогает~--- адаптивный порог $\mathrm{cond}(S_p^\top S_p)<10^3$ срезает
-эффективное окно $p_k$ до того же уровня ($p_k\le 9$ во всех
-запусках). Это иллюстрирует, что~$p_{\max}$ работает как верхняя
-оценка, а реальная глубина окна определяется обусловленностью
-накопленных секущих. На Broyden Banded $p=1$ \emph{недостаточно}
-(выход на $\|F\|=\infty$ через $66$ итераций); $p\ge 2$ обеспечивает
-устойчивую сходимость за $62\text{--}69$ итераций. Качественная
-неустойчивость классического Бройдена ($p=0$) на этой задаче, отмеченная
-выше, оказывается следствием именно ранг-1 структуры
-обновления, а не плохого начального приближения.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\textwidth]{fig_sp_broyden_pvar.pdf}
-\caption{Сходимость SP-Broyden при варьировании верхней оценки глубины
-окна $p\in\{1,2,5,10,20\}$ относительно классического Бройдена
-($p=0$, серый). Адаптивный порог $\mathrm{cond}(S_p^\top S_p)<10^3$
-сужает эффективное окно до $p_k\le 9$, поэтому $p\le 10$ и $p\le 20$
-дают визуально одинаковые траектории. Пунктир~--- уровень $10^{-10}$.}
-\label{fig:spb_pvar}
-\end{figure}
-
-\paragraph{Контроль адаптивного порога.}
-На Рис.~\ref{fig:spb_cond} показано, как ведут себя $\mathrm{cond}(S_p^\top S_p)$
-и эффективное $p_k$ по итерациям для запуска SP-Broyden с $p_{\max}=10$
-на Discrete BVP, $n=100$. Обусловленность грамиана колеблется в полосе
-$10^1\text{--}10^3$ с медианой $\approx 126$ и максимумом $\approx 9{,}98\cdot
-10^2$~--- вплотную к порогу. Эффективное окно практически никогда не
-доходит до $p_{\max}=10$: распределение $p_k$ по $170$ итерациям~---
-$0$ в $31$ итерациях (фаза прогрева, когда даже $p_k=1$ даёт
-$\mathrm{cond}>10^3$), от $1$ до $9$ в остальных $139$. Таким образом,
-адаптивный механизм работает: окно автоматически сужается там, где это
-требуется численной устойчивостью, и расширяется на «гладких» отрезках
-траектории. Теоретически такое поведение соответствует
-теореме~\ref{thm:bd}: в~\eqref{eq:exact_decomp} член
-$\Delta_k\le C_d\|x_k-x^*\|/\sigma_{\min}^2(\widehat S_p^{(k)})$
-обратно пропорционален квадрату наименьшего сингулярного числа окна,
-и порог $\tau=10^3$ ограничивает $1/\sigma_{\min}^2$ величиной
-$\tau/\sigma_{\max}^2(\widehat S_p^{(k)})$.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\textwidth]{fig_sp_broyden_cond.pdf}
-\caption{Discrete BVP, $n=100$, SP-Broyden с $p_{\max}=10$. Слева~---
-$\mathrm{cond}(S_p^\top S_p)$ по итерациям; пунктир~--- порог
-$\tau=10^3$. Справа~--- эффективное $p_k$, выбранное адаптивным
-механизмом; пунктир~--- $p_{\max}=10$. Распределение по итерациям:
-$p_k=0$ на 31 шаге (фаза прогрева), $p_k\in[1,9]$ на 139 шагах,
-$p_k=10$ ни разу.}
-\label{fig:spb_cond}
-\end{figure}
-
-
-\section{Высокая размерность: Шерман--Моррисон и L-SP-Broyden}\label{sec:highdim}
 
 \paragraph{Мотивация.} Прямая реализация Алгоритма~\ref{alg:sp_broyden}
 хранит плотную матрицу $B_k\in\mathbb R^{n\times n}$, что требует $O(n^2)$
@@ -1278,7 +903,8 @@ LU-факторизацию. При $n=10^4$ это $\approx 8\cdot 10^8$ чис
 
 \paragraph{Шерман--Моррисон-форма.} Поскольку SP-обновление имеет ранг
 1, $B_{k+1} = B_k + u_k v_k^{\top}$ с
-$u_k = (y_k - B_k s_k)/(v_k^{\top} s_k)$, формула
+$u_k = y_k - B_k s_k$ (используем $v_k^{\top} s_k = 1$,
+утверждение~\ref{prop:vstar}), формула
 Шермана--Моррисона~\cite[\S 3.4]{dennis1996} даёт явное обновление
 обратной матрицы $H_k := B_k^{-1}$:
 \begin{equation}\label{eq:sm_update}
@@ -1289,11 +915,11 @@ $u_k = (y_k - B_k s_k)/(v_k^{\top} s_k)$, формула
 \end{equation}
 Хранение $H_k$ остаётся $O(n^2)$, но шаг $d_k$ вычисляется как
 матрично-векторное произведение за $O(n^2)$ flops вместо $O(n^3)$.
-Знаменатель $v_k^{\top} H_k y_k$ в~\eqref{eq:sm_update} получается из
-тождества $1 + v_k^{\top} H_k u_k = v_k^{\top} H_k y_k / (v_k^{\top} s_k)$
-после подстановки $u_k$. Условие невырожденности $\det B_{k+1} \ne 0$
-эквивалентно $v_k^{\top} H_k y_k \ne 0$; при вырождении срабатывает
-fallback~\ref{rem:fallback} (Левенберг--Марквардт-демпфирование).
+Знаменатель $v_k^{\top} H_k y_k$ в~\eqref{eq:sm_update} равен
+$1 + v_k^{\top} H_k u_k$ из общей формы
+Шермана--Моррисона~--- после подстановки $u_k = y_k - B_k s_k$ и
+$v_k^{\top} s_k = 1$. Условие невырожденности $\det B_{k+1} \ne 0$
+эквивалентно $v_k^{\top} H_k y_k \ne 0$.
 
 \paragraph{Limited-memory L-SP-Broyden.} Для $n\gtrsim 10^4$ хранить
 плотную $H_k$ невозможно даже в форме~\eqref{eq:sm_update}. По аналогии
@@ -1302,18 +928,18 @@ fallback~\ref{rem:fallback} (Левенберг--Марквардт-демпфи
 формируется явно}. Вместо этого хранится скользящее окно последних
 $m$ принятых троек $\{(s_j, y_j, v_j)\}_{j=k-m+1}^{k}$.
 
-Применение $H_k$ к произвольному вектору $g$ реализуется forward-pass
-рекурсией (Алгоритм~\ref{alg:lsp_broyden_apply}), формально
+Применение $H_k$ к произвольному вектору $g$ реализуется рекурсией
+прямого прохода (Алгоритм~\ref{alg:lsp_broyden_apply}), формально
 эквивалентной последовательной композиции
 \eqref{eq:sm_update} к $H_0=I$ для всех корректировок текущего окна:
 \begin{equation}\label{eq:lsp_recursion}
   H_k g \;=\; H_{k-m} g \;+\; \sum_{j=k-m+1}^{k}
-     \frac{(s_j - H_j y_j)\,(v_j^{\top} H_j g)}
-          {v_j^{\top} H_j y_j},\qquad H_{k-m}=I.
+     \frac{(s_j - H_{j-1} y_j)\,(v_j^{\top} H_{j-1} g)}
+          {v_j^{\top} H_{j-1} y_j},\qquad H_{k-m}=I.
 \end{equation}
 
 \begin{algorithm}[H]
-\caption{Apply $H_k\,g$ для L-SP-Broyden (forward-pass рекурсия)}
+\caption{Применение $H_k\,g$ для L-SP-Broyden (рекурсия прямого прохода)}
 \label{alg:lsp_broyden_apply}
 \begin{algorithmic}[1]
    \Require окно $\{(s_j, y_j, v_j)\}_{j=1}^{m}$, входной вектор $g$
@@ -1336,7 +962,7 @@ $m$ принятых троек $\{(s_j, y_j, v_j)\}_{j=k-m+1}^{k}$.
 
 Полный шаг L-SP-Broyden выглядит так: на итерации $k$ вычисляется
 $d_k = -\Call{ApplyH}{F(x_k); \mathrm{window}_k}$; делается
-backtracking-Армихо (Алгоритм~\ref{alg:sp_broyden_ls}) или полный шаг
+backtracking-Армихо (Алгоритм~\ref{alg:qn_armijo}) или полный шаг
 $x_{k+1}=x_k+d_k$; формируется секущая
 $(s_k, y_k) = (x_{k+1}-x_k,\, F(x_{k+1})-F(x_k))$;
 строится SP-направление $v_k$ из текущего окна столбцов $S_p$ (как в
@@ -1345,12 +971,12 @@ $(s_k, y_k) = (x_{k+1}-x_k,\, F(x_{k+1})-F(x_k))$;
 выталкивается, если длина $> m$.
 
 \paragraph{Сложность L-SP-Broyden.} Память: каждая тройка занимает
-$3n$~floats, плюс служебные кэши $\xi^{\mathrm{cache}},
+$3n$ чисел с плавающей точкой, плюс служебные кэши $\xi^{\mathrm{cache}},
 \alpha^{\mathrm{cache}}$ размера $O(nm)$, итого
 \begin{equation}\label{eq:lsp_memory}
    \mathcal M_{\text{L-SP-Broyden}} \;=\; 3nm + nm + 2n \;=\; O(nm).
 \end{equation}
-При $n=10^4, m=10$ это $4{,}2\cdot 10^5$ floats $\approx 3{,}4$~МБ.
+При $n=10^4, m=10$ это $4{,}2\cdot 10^5$ чисел с плавающей точкой $\approx 3{,}4$~МБ.
 Время: тело внешнего цикла Алгоритма~\ref{alg:lsp_broyden_apply}
 выполняется $m$ раз, внутреннего --- до $m-1$ раз; стоимость одного
 обращения $H_k g$ составляет $O(nm^2)$ flops. На итерацию приходится
@@ -1386,106 +1012,88 @@ Limited-memory BFGS~\cite{lbfgs,liu1989,byrd1994} применим для
 непосредственно с $F$ и не требует симметрии. Anderson($m,\beta$)
 \cite{anderson1965,walker2011,toth2015}~--- альтернативный
 limited-memory метод без явной модели Якобиана; в нём окно
-$\{x_j, F(x_j)\}$ используется для построения мульти-секущего fit'а,
+$\{x_j, F(x_j)\}$ используется для построения мульти-секущей подгонки,
 но без управления условием~(14) из гл.~4 (\eqref{eq:cd-quant}),
 что делает Anderson менее точным в режимах, где требуется
 субквадратичная сверхлинейность.
 \end{remark}
 
-\paragraph{Численные эксперименты.} Тестовый набор:
-\textbf{(A)} Banded Cubic~--- трёхдиагональная сильно-монотонная
-система с существенным кубическим возмущением:
-\begin{equation}\label{eq:banded-cubic}
-  F_i(x) = \bigl(1 + \tfrac12\sin^2(\pi i/n)\bigr) x_i
-              - 0{,}3\,(x_{i-1} + x_{i+1})
-              + 1{,}5\,(x_i - c_i)^3,\quad
-  c_i = \tfrac12 \sin(2\pi i/n),
-\end{equation}
-с граничными условиями $x_0 = x_{n+1} = 0$. Линейная часть
-диагонально доминантна, $\mathrm{cond} \approx 5$ независимо от $n$;
-кубическое возмущение значимо при $\Norm{x}=O(1)$.
-\textbf{(B)} Broyden Banded (MGH~\#31, \cite{more1981})~--- стандартный
-тест, лента ширины~7, со стартовой точкой $x^{(0)}_i = -0{,}1$.
 
-Размерности $n\in\{10^3, 10^4\}$. Методы:
-\begin{itemize}
-   \item Broyden-SM и SP-Broyden-SM (плотная $H$, $p\le 5$)~---
-     только для $n=10^3$ (при $n=10^4$ потребовалось бы $\approx 800$~МБ);
-   \item L-Broyden ($m=10$, $p=0$), L-SP-Broyden ($m\in\{10,20\},\, p\le 5$),
-     Anderson ($m=10, \beta=1$)~--- для обеих размерностей.
-\end{itemize}
-Все Бройден-семейные методы запускаются с глобализацией Армихо
-(Алгоритм~\ref{alg:sp_broyden_ls}, $c_1 = 10^{-4}$). Anderson
-реализован в схеме Walker--Ni~\cite{walker2011} поверх Picard-отображения
-$g_\tau(x) = x - \tau F(x)$ с residual-safeguard. Критерий остановки
-$\Norm{F(x_k)}_2 \le 10^{-10}$. Скрипт~--- \texttt{diag\_highdim.py} в
-корне репозитория, сырые траектории~--- \texttt{highdim\_results.npz}.
+% ============================================================
+\section{Численные эксперименты}\label{sec:spb_numerics}
+% ============================================================
+
+В этом разделе представлены два эксперимента, прямо подтверждающих
+утверждения теоретической части главы: эволюция аппроксимации якобиана
+(проверка bounded deterioration по теореме~\ref{thm:bd}) и проверка
+корректности limited-memory варианта Алгоритма~\ref{alg:lsp_broyden_apply}
+из~\S\ref{sec:highdim}.
+
+\paragraph{Эволюция аппроксимации якобиана (проверка теоремы~\ref{thm:bd}).}
+Прямое измерение нормы $\|B_k - J(x_k)\|_F$ по итерациям на стандартной
+задаче Discrete BVP~\cite{more1981} размерности $n=100$ (дискретизация
+$u'' + (u+t+1)^3/2 = 0$, $u(0)=u(1)=0$) приведено на
+Рис.~\ref{fig:spb_jacerr}. Для статистической корректности взято $20$
+случайных стартов $x_0 = x_0^{\mathrm{def}} + 0{,}05\,u_i$ с
+единичными $u_i\in\RR^{100}$ (фиксированный seed), для каждого старта
+запущен каждый метод; на рисунке~--- медианная траектория
+$\|B_k - J(x_k)\|_F$ и затенённая полоса между $25$- и $75$-перцентилями.
+Якобиан $J(x_k)$ считается аналитически. По всем $20$ стартам
+$\|E_k\|_F$ остаётся \emph{ограниченной} вдоль траектории и убывает,
+что является прямой эмпирической верификацией оценки~\eqref{eq:bd_squared};
+SP-Broyden ($p\le 5$, $p\le 10$) достигает финального уровня
+$\|B-J\|_F \approx 5{,}7$ за медиану $141$--$145$ итераций, классический
+Бройден~--- $\approx 7$ за медиану $325$ итераций. IQR-полосы у
+SP-Broyden особенно узкие ($\le 8$ итераций при медианных $\sim 145$),
+что свидетельствует об устойчивости поведения к выбору~$x_0$.
+Скрипт~--- \texttt{diag\_jacerr\_stat.py}.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{fig_sp_broyden_jacerr.pdf}
+\caption{Discrete BVP, $n=100$, $20$ случайных стартов из окрестности
+$x_0$ по умолчанию. Медианная траектория $\|B_k - J(x_k)\|_F$ для
+классического Бройдена ($p=0$) и SP-Broyden ($p\le 5$, $p\le 10$);
+затенённая полоса~--- IQR между $25$- и $75$-перцентилями. Якобиан
+$J(x_k)$ вычислен аналитически.}
+\label{fig:spb_jacerr}
+\end{figure}
+
+\paragraph{Корректность L-SP-Broyden в высокой размерности.}
+Для проверки эквивалентности рекурсии~\eqref{eq:lsp_recursion} плотной
+форме~\eqref{eq:sm_update} при $m\ge p+1$ проведено сравнение на задаче
+Broyden Banded (MGH~\#31, \cite{more1981}) при $n\in\{10^4, 10^5\}$ для
+случайных стартов $x_0 = -0{,}1\cdot \mathbf{1} + 0{,}05\,u_i$ с
+единичными $u_i\in\RR^n$ (фиксированный seed). При $n=10^4$ плотный
+SP-Broyden-SM ($p\le 5$) выступает baseline'ом ($n^2=10^8$ чисел с плавающей точкой
+$\approx 800$~МБ оперативной памяти, $3$ старта); при $n=10^5$ плотная
+форма принципиально неприменима ($n^2=10^{10}$ чисел с плавающей точкой $\approx 80$~ГБ).
+L-SP-Broyden запускается с $m\in\{5,10,20\}$ ($n=10^4$, $8$ стартов) и
+$m\in\{10,20\}$ ($n=10^5$, $4$ старта). Все методы~--- с глобализацией
+Армихо (Алгоритм~\ref{alg:qn_armijo}, $c_1=10^{-4}$); критерий
+$\|F\|_2 \le 10^{-10}$. Скрипт~--- \texttt{diag\_highdim\_stat.py}.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{fig_highdim_conv.pdf}
-\caption{Сходимость в высокой размерности: 4 панели~--- 2 задачи
-(\textbf{A}~Banded Cubic, \textbf{B}~Broyden Banded) $\times$
-2 размерности ($n=10^3$, $n=10^4$). На $n=10^4$ плотные методы
-Broyden-SM и SP-Broyden-SM пропущены ($n^2 = 10^8$ floats не
-помещается в оперативную память типичной рабочей станции).}
+\caption{Broyden Banded. Медианная траектория $\|F(x_k)\|_2$ + IQR
+по случайным стартам. Слева~--- $n=10^4$ с плотным SP-Broyden-SM
+($p\le 5$, чёрный пунктир) как baseline; справа~--- $n=10^5$, где
+плотная форма требует $\approx 80$~ГБ оперативной памяти и
+неприменима.}
 \label{fig:highdim_conv}
 \end{figure}
 
-\paragraph{Анализ результатов.} На \textbf{Banded Cubic} все методы
-сходятся за $\approx 30$ итераций при обоих $n$; L-SP-Broyden $(m=10)$
-точно воспроизводит результат dense SP-Broyden-SM $(p\le 5)$
-($32$~ит.~vs.~$31$~ит.~при $n=10^3$, $32$~ит.~vs.~$32$~ит.~при $n=10^4$).
-На \textbf{Broyden Banded} картина выраженнее: dense SP-Broyden-SM
-сходится за~32~ит.~при $n=10^3$, L-SP-Broyden $(m=10)$~--- за 41~ит.
-($\approx 28\,\%$ хуже), L-SP-Broyden $(m=20)$ воспроизводит
-точно 32~ит.~dense-варианта. L-Broyden $(m=10, p=0)$ требует
-60~ит.~--- систематически хуже SP-семейства за счёт отсутствия
-ранг-$(p+1)$ проектора. При $n=10^4$ dense-вариант невозможен,
-а L-SP-Broyden $(m=20)$ достигает тех же 32~итераций, занимая
-$8{,}2\cdot 10^5$ floats $\approx 6{,}6$~МБ \emph{вместо}
-$10^8$ floats $= 800$~МБ у плотной формы~--- сокращение памяти
-в $122\times$ при идентичной сходимости.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\textwidth]{fig_highdim_summary.pdf}
-\caption{Сводка: число итераций, число вычислений $F$, wall-time и
-peak-memory по методу $\times$ задаче $\times$ $n$. Пробелы~---
-случаи, когда метод не применим (плотные при $n=10^4$). Шкалы
-``wall'' и ``память''~--- логарифмические.}
-\label{fig:highdim_summary}
-\end{figure}
-
-\paragraph{Влияние глубины окна.} На задаче~(A) при $n=10^3$:
-$m=2 \to 41$~ит., $m=5 \to 33$~ит., $m=10 \to 32$~ит., $m=20 \to 30$~ит.
-Узкое окно ($m=2$) ограничивает SP-проектор рангом $\le 2$ и снимает
-основное преимущество перед L-Broyden. Для $m\ge 5$ информация,
-накапливаемая в окне, достаточна для воспроизводства
-dense-сходимости (рис.~\ref{fig:highdim_pvar}). Эмпирическая
-рекомендация: $m \in [10, 20]$ при $p_{\max} = 5$ обеспечивает
-оптимальный баланс между памятью и итерациями для рассмотренных
-задач; при $n\ge 10^5$ может потребоваться $m\sim 50$, что
-эмпирически соответствует прецеденту L-BFGS~\cite[\S 7.2]{bfgs}.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.78\textwidth]{fig_highdim_pvar.pdf}
-\caption{L-SP-Broyden, Banded Cubic, $n=1000$: зависимость сходимости
-от размера окна $m\in\{2,5,10,20\}$, адаптивный $p_{\max}=\min(m,5)$.
-Узкое окно $m=2$ оставляет SP-проектор ранга $\le 2$; при $m\ge 5$
-качество сходимости стабилизируется на dense-уровне.}
-\label{fig:highdim_pvar}
-\end{figure}
-
-\paragraph{Итог раздела.} L-SP-Broyden с памятью $O(nm)$ и стоимостью
-$O(nm^2)$ flops на итерацию воспроизводит сходимость плотного
-SP-Broyden-SM при $m\ge p+1$ накопленных секущих условий. На
-крупномасштабных тестах $n=10^4$ при $m=20$ достигается тот же
-результат, что и у плотной формы при $n=10^3$, при сокращении памяти
-в $\sim 100\times$. Перед Anderson при сравнимом $m$ выигрыш
-выражается в более жёстком контроле условия~\eqref{eq:cd-quant}
-(см.\ гл.~4), а перед L-Broyden~--- в наследовании ранг-$(p+1)$
-проектора (теорема~\ref{thm:bd}).
+При $n=10^4$ L-SP-Broyden $(m=20)$ практически точно совпадает с плотным
+SP-Broyden-SM (медианы~$34$ vs~$33$ итераций; кривые сливаются на
+рисунке)~--- прямая эмпирическая верификация
+эквивалентности~\eqref{eq:lsp_recursion} при $m\ge p+1$. Уменьшение
+окна даёт пенальти: $m=10$~--- $52$ итерации, $m=5$~--- $99$ итераций
+($m=5$ ловит режим плохо обусловленного промежуточного окна, при
+$m\le p+1=6$ адаптивный SP-проектор не обеспечивает запас по
+$\sigma_{\min}(S_p)$). При $n=10^5$ L-SP-Broyden сходится за медиану
+$49$~итераций ($m=20$) и $59$~итераций ($m=10$), что качественно
+согласуется с поведением при $n=10^4$~--- число итераций на сходимость
+limited-memory варианта \emph{не растёт} с $n$.
 
 
