@@ -72,11 +72,7 @@ mipt_thesis_master/
 |---|---|---|---|---|
 | гл. 2 «SP-Broyden»: эксперименты сходимости | `tezisy.ipynb` | `diag_sp_broyden.py` | — | `fig_sp_broyden_conv.pdf`, `fig_sp_broyden_jacerr.pdf`, `fig_sp_broyden_pvar.pdf`, `fig_sp_broyden_cond.pdf` |
 | гл. 2, раздел `sec:highdim` (L-SP-Broyden, $n\le 10^4$) | — | `diag_highdim.py` | `highdim_results.npz` | `fig_highdim_conv.pdf`, `fig_highdim_summary.pdf`, `fig_highdim_pvar.pdf` |
-| гл. 3 «SS-SR1»: 2D-бассейн и радиус сходимости | `basin.ipynb`, `pics.ipynb` | — | — | `fig_basin_polar.pdf`, `fig_radius_vs_beta.pdf`, `fig_scaling.pdf`, `fig_ss_sr1_conv.pdf` |
-| гл. 3, $n\ge 10$ (SS-SR1 vs SR1) | — | `diag_ss_sr1.py` | `ss_sr1_ndim.npz` | `fig_ss_sr1_ndim_conv.pdf`, `fig_ss_sr1_ndim_rpast.pdf`, `fig_ss_sr1_ndim_summary.pdf` |
-| гл. 3, сравнение с BFGS / DFP / PSB / L-BFGS | — | `diag_qn_compare.py` | `qn_compare.npz` | `fig_qn_compare_conv.pdf`, `fig_qn_compare_summary.pdf`, `fig_qn_compare_rpast.pdf` |
-| гл. 3, скейлинг радиуса (`eq:scaling`, bootstrap-CI) | — | `diag_ss_sr1_scaling.py` | `ss_sr1_scaling.npz` | `fig_ss_sr1_scaling.pdf` |
-| гл. 3, табл. 3.1 (CI к аномалии $\alpha=100,\beta=2.0$) | — | `diag_table31_ci.py` | `table31_ci.npz` | `fig_table31_ci.pdf` |
+| гл. 3, статистика SS-конструкции в $n\in\{10,20,50\}$ — пара SR1/SS-SR1 и пара PSB/SS-PSB, по 50 случайных стартов; convergence-фигуры для обеих пар + накопленная невязка прошлых секущих $\Vert B_k S_p - Y_p\Vert_F$ для PSB-пары (тh. ss_props п. 3) | — | `diag_ndim_stat.py` | `ndim_stat.npz`, `ndim_stat_summary.txt` | `fig_ndim_stat_sr1.pdf`, `fig_ndim_stat_psb.pdf`, `fig_ndim_stat_rpast_psb.pdf` |
 | гл. 4 «VIJI-Restarted»: основные эксперименты | `pics.ipynb` | `run_seeds.py`, `diag_sp_afd.py` | `results.npz` | `fig_viji_conv.pdf`, `fig_viji_seeds.pdf`, `fig_sp_afd_gap_T.pdf`, `fig_sp_afd_problems.pdf`, `fig_sp_afd_cond14.pdf`, `fig_sp_afd_rstar.pdf` |
 | гл. 4, baseline Anderson($m,\beta$) | — | `diag_anderson.py` | `anderson_baseline.npz` | `fig_anderson_baseline.pdf`, `fig_anderson_summary.pdf` |
 

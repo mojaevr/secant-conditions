@@ -48,8 +48,10 @@
         \texttt{T2A}-энкодинг, пакет \texttt{mathtext} класса
         \texttt{mipt-thesis-bs}).
 \end{itemize}
-Для воспроизведения PDF достаточно команды
-\verb|cd mipt_thesis_master && ./build.sh| (двойной \texttt{pdflatex}).
+Для воспроизведения PDF достаточно команды (двойной \texttt{pdflatex}):
+\begin{center}
+\verb|cd mipt_thesis_master && ./build.sh|
+\end{center}
 
 \section{Случайные числа и seed'ы}
 
@@ -76,6 +78,18 @@
         $(\alpha,\beta)\in\{10,50,100\}\times\{1,1{,}5,2\}$;
         вариативность по seed'ам не агрегировалась
         (см.\ ограничения в \S\ref{sec:viji:discussion}).
+  \item Статистические эксперименты главы~3
+        (рис.~\ref{fig:ndim_stat_sr1}, \ref{fig:ndim_stat_psb},
+        \ref{fig:ndim_stat_rpast_psb}):
+        seed \texttt{20\,260\,503} (PCG64), $50$~единичных направлений
+        на сфере $S^{n-1}$ для каждой размерности $n\in\{10,20,50\}$,
+        paired-design (одни и те же направления для всех методов
+        внутри одной пары SS-X / X). Из~каждой траектории сохраняется
+        как $\Norm{\nabla f(x_k)}_2$ (для convergence-фигур), так и
+        $\Norm{B_k S_p - Y_p}_F$ (rpast-метрика для~PSB-пары~--- прямая
+        иллюстрация теоремы~\ref{thm:ss_props}, п.~3; для~SR1-пары
+        rpast-данные сохраняются в~\texttt{.npz} без построения фигуры
+        в~главе, см.~\S\ref{par:ssn-rpast}).
 \end{itemize}
 
 \section{Единый критерий остановки}
@@ -98,7 +112,7 @@
         $\delta_{\mathrm{basin}} = 10^{-6}$ и фиксированным бюджетом
         итераций), поскольку искомая величина~--- именно радиус,
         с которого метод сошёлся.
-  \item \textbf{Глава~4 (сильно монотонная VI с оператором~$F$).}
+  \item \textbf{Глава~4 (сильно монотонная VI с оператором $F$).}
         В качестве индикатора сходимости используется радиус
         $\Norm{x_k - x^{*}}_2$ (эталонный корень $x^{*}$ известен из
         конструкции тестовой задачи: $c$ выбрана так, чтобы $F(x^{*})=0$).
@@ -115,16 +129,15 @@
 \section{Соответствие между текстом и ноутбуками}
 
 \begin{center}
-\begin{tabular}{ll}
+\begin{tabularx}{\textwidth}{@{}XX@{}}
 \toprule
 Раздел текста & Источник эксперимента \\
 \midrule
 \S\ref{sec:viji:numerics}, рис.~\ref{fig:viji_conv} (одиночный прогон) & \texttt{tezisy.ipynb}, ячейка <<SP-AFD vs SP-Broyden vs VIQA>> \\
 \S\ref{sec:viji:numerics}, рис.~\ref{fig:viji_seeds} (10 seed'ов, IQR) & \texttt{run\_seeds.py} \\
 Глава~2, проверка $\Fro{E_k}=\Fro{B_k - J(x_k)}$ & \texttt{tezisy.ipynb}, ячейка <<bounded deterioration>> \\
-Глава~3, табл.~\ref{tab:radius} (скейлинг $R(\alpha,\beta)$) & \texttt{basin.ipynb}, секция <<scaling>> \\
-Глава~3, бассейн сходимости (рис.~\ref{fig:basin}) & \texttt{basin.ipynb}, секция <<basin>> \\
 Глава~2, 2D-иллюстрации проектора $\Pi_k$ & \texttt{pics.ipynb} \\
+\S\ref{sec:ss_numerics}, рис.~\ref{fig:ndim_stat_sr1}, \ref{fig:ndim_stat_psb}, \ref{fig:ndim_stat_rpast_psb} (50~стартов, $n\in\{10,20,50\}$; convergence + $\Norm{B_k S_p - Y_p}_F$ для PSB-пары) & \texttt{diag\_ndim\_stat.py} \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{center}

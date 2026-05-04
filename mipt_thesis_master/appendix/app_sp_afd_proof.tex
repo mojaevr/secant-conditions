@@ -198,23 +198,20 @@ $\Norm{v_k - x^{*}} \le \varepsilon^{**}$ выполняется $r^{*} = 1$
 лемму~\ref{lem:app-afd:dirbound}: после первого refinement-шага
 $\Norm{(B_k^{(1)} - J_k) d^{(0)}_k} \le (L_1\tau/2)\Norm{d^{(0)}_k}^{2}$.
 Шаг VIJI с обновлённой матрицей даёт
-\[
+\begin{align*}
 d^{(1)}_k - d^{(0)}_k
-= -(B_k^{(1)} + \beta_k I)^{-1} F(v_k) - d^{(0)}_k
-= (B_k^{(1)} + \beta_k I)^{-1}\bigl((B_k^{(0)} + \beta_k I) - (B_k^{(1)} + \beta_k I)\bigr)\,d^{(0)}_k
-= (B_k^{(1)} + \beta_k I)^{-1}(B_k^{(0)} - B_k^{(1)})\,d^{(0)}_k.
-\]
+&= -(B_k^{(1)} + \beta_k I)^{-1} F(v_k) - d^{(0)}_k \\
+&= (B_k^{(1)} + \beta_k I)^{-1}\bigl((B_k^{(0)} + \beta_k I) - (B_k^{(1)} + \beta_k I)\bigr)\,d^{(0)}_k \\
+&= (B_k^{(1)} + \beta_k I)^{-1}(B_k^{(0)} - B_k^{(1)})\,d^{(0)}_k.
+\end{align*}
 Норма разности матриц $B_k^{(0)} - B_k^{(1)}$ оценивается через
 формулу SP-обновления (ранг $\le p+1$, по построению окна памяти):
-\[
+\begin{align*}
 \Norm{B_k^{(0)} - B_k^{(1)}}_{op}
-\;\le\;
-\frac{\Norm{g^{(0)}_k - B_k^{(0)} d^{(0)}_k}}{\sigma_{\min}(\widehat S_k)\,\Norm{d^{(0)}_k}}
-\;\le\;
-\frac{1}{\sigma_0}\,\frac{\Norm{g^{(0)}_k - J_k d^{(0)}_k} + \Norm{(J_k - B_k^{(0)})d^{(0)}_k}}{\Norm{d^{(0)}_k}}
-\;\le\;
-\frac{M_0 + L_1\tau\Norm{d^{(0)}_k}/2}{\sigma_0}.
-\]
+&\le \frac{\Norm{g^{(0)}_k - B_k^{(0)} d^{(0)}_k}}{\sigma_{\min}(\widehat S_k)\,\Norm{d^{(0)}_k}} \\
+&\le \frac{1}{\sigma_0}\,\frac{\Norm{g^{(0)}_k - J_k d^{(0)}_k} + \Norm{(J_k - B_k^{(0)})d^{(0)}_k}}{\Norm{d^{(0)}_k}} \\
+&\le \frac{M_0 + L_1\tau\Norm{d^{(0)}_k}/2}{\sigma_0}.
+\end{align*}
 (Здесь использованы лемма~\ref{lem:app-afd:fd} для FD-оценки и
 $\Norm{(J_k - B_k^{(0)})d^{(0)}_k} \le M_0\Norm{d^{(0)}_k}$ через
 Frobenius$\to$op-оценку и условие~\eqref{eq:sp-bounded}.)
@@ -244,7 +241,7 @@ C_{\Delta}\,\Norm{d^{(0)}_k}.
 предположению~\ref{as:step-ndg}, и
 $\Norm{d^{(0)}_k} \le (M_0/\mu_F + 1)\,\Norm{e_k}$ через сильную
 монотонность $\Norm{F(v_k)} \ge \mu\Norm{e_k}$ (где $\mu_F = \mu/(M_0+L_1)$
-учитывает оценку~$\Norm{(B_k^{(0)} + \beta_k I)^{-1}}_{op} \ge 1/(M_0 + L_1)$,
+учитывает оценку $\Norm{(B_k^{(0)} + \beta_k I)^{-1}}_{op} \ge 1/(M_0 + L_1)$,
 обратную к~\eqref{eq:app-afd:tikhonov}). Объединяя
 \[
 \Norm{d^{(1)}_k - d^{(0)}_k}
@@ -341,7 +338,7 @@ $\mathrm{GAP}(\bar x^{(S)}_N) = \mathcal O(L_1 D_0^{3} \rho^{3S} / N^{3/2})$,
 Из proposition~\ref{prop:app-afd:rstar} следует, что асимптотически
 $\bar r^{*} \to 1$, поэтому стоимость одной внутренней итерации
 SP-AFD~--- $1 + 1 = 2$ вызова $F$. По сравнению с одним вызовом
-$F$ у VIQA-Broyden, это даёт лишь \emph{постоянный} множитель~$2$ в
+$F$ у VIQA-Broyden, это даёт лишь \emph{постоянный} множитель $2$ в
 $F$-сложности, но при оптимальной скорости $\mathcal O(T^{-3/2})$
 вместо неоптимальной $\mathcal O(T^{-1})$. Конкретно, для достижения
 точности $\varepsilon$ в GAP:
