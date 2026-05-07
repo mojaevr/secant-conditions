@@ -55,3 +55,6 @@ CH*_AUDIT_REPORT.txt
 
 # --- Diagnostic checkpoints / runtime artifacts ----------------------------
 *.pkl
+
+# --- Files not part of the current thesis version (kept locally) -----------
+mipt_thesis_master/_archive/
