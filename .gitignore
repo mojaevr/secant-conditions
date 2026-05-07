@@ -57,4 +57,4 @@ CH*_AUDIT_REPORT.txt
 *.pkl
 
 # --- Files not part of the current thesis version (kept locally) -----------
-mipt_thesis_master/_archive/
+_archive/
