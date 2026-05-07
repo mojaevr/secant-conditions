@@ -8,12 +8,23 @@
 \chapter{Выравнивание направлений в VIJI-итерациях}
 \label{app:alignment}
 
-В настоящем приложении приведено полное доказательство леммы~\ref{lem:alignment}
-для $\mu$-сильно монотонного $L_1$-гладкого $F$. Стратегия~--- явное
-тождество разложения шага $d_{k+1} = \theta_{k+1}\,s_k + \text{возмущение}$,
-после чего каждое из трёх слагаемых возмущения оценивается через стандартные
-следствия~\ref{as:sm} и количественное условие Дэнниса--Море о скорости
-спадания секущего остатка \textup{(}предположение~\ref{as:dm-rate} ниже\textup{)}.
+В настоящем приложении доказывается лемма~\ref{lem:alignment} для
+$\mu$-сильно монотонного $L_1$-гладкого $F$ при единственном
+дополнительном условии~--- асимптотическом выравнивании
+направлений ошибки \textup{(}\ref{as:dir-align}\textup{)},
+см.~\S\ref{sec:app-aln-l1:secant-rk}. Стандартная Q-линейная сходимость
+VIJI-итерации \textup{(}\cite[Theorem~3.4]{Agafonov2024VIJI}\textup{)}
+используется как фоновая. Все константы зависят только от
+$\mu, L_1, \eta$ и равномерной оценки $M_0 := \sup_k \Fro{B_k - \Jstar} <
+\infty$ из следствия~\ref{cor:sp-in-segment}.
+
+\paragraph{Обозначение $O(\cdot)$.}
+Везде $g = O(h)$ означает $\Norm{g} \le C\,h$ с константой $C \ge 0$,
+зависящей только от $\mu, L_1, \eta, M_0, c_d$ \textup{(}при использовании
+\ref{as:step-ndg}\textup{)}, $\rho_v$ \textup{(}Q-линейная константа из
+\cite[Theorem~3.4]{Agafonov2024VIJI}\textup{)} и $\omega_h$
+\textup{(}при использовании \ref{as:dir-align}\textup{)}, но не от номера
+итерации $k$ или сегмента~$s$.
 
 \section{Постановка и линеаризация}
 \label{sec:app-aln-l1:setup}
@@ -28,8 +39,7 @@ R(x^{*}) = 0,
 \nabla R(x^{*}) = 0.
 \label{eq:app-aln-l1:decomp}
 \end{equation}
-По $L_1$-липшицевости $\nabla F$ имеем $\Norm{\nabla R(x)}_{op} \le L_1\Norm{x-x^{*}}$,
-откуда стандартным интегральным неравенством
+По $L_1$-липшицевости $\nabla F$
 \begin{equation}
 \Norm{R(x) - R(y) - \nabla R(y)\,(x-y)} \;\le\; \tfrac{L_1}{2}\,\Norm{x-y}^{2},
 \qquad
@@ -38,135 +48,63 @@ R(x^{*}) = 0,
 \end{equation}
 
 \paragraph{Итерация VIJI-Restarted на сегменте.}
-Согласно~\S\ref{sec:viji:setup} главы~\ref{ch:sp-broyden-viji}
-\textup{(}см.~также~\cite[Algorithm~1]{Agafonov2024VIJI}\textup{)} на внутренней
-итерации сегмента имеем
+Согласно~\S\ref{sec:viji:setup} главы~\ref{ch:sp-broyden-viji} на внутренней
+итерации сегмента
 \begin{align}
 x_k     &= v_k - (B_k + \beta_k I)^{-1}\, F(v_k), \label{eq:app-aln-l1:x}\\
 v_{k+1} &= (1 - \theta_{k+1})\, x_k + \theta_{k+1}\, v_k,
-\qquad \theta_{k+1} \in [0,1], \label{eq:app-aln-l1:v}\\
+\quad \theta_{k+1} \in [0,1], \label{eq:app-aln-l1:v}\\
 s_k     &= x_k - v_k, \quad y_k = F(x_k) - F(v_k),
 \quad B_{k+1} = \mathsf{SP}(B_k, s_k, y_k), \label{eq:app-aln-l1:upd}
 \end{align}
-с регуляризатором $\beta_k \ge 0$, выбираемым в VIJI по правилу
+с $\beta_k \ge 0$, выбираемым по правилу VIJI
 $\beta_k = \max(\beta_{\min}, \eta L_1\Norm{s_{k-1}})$, и шагом следующего
 предиктора $d_{k+1} := x_{k+1} - v_{k+1}$.
 
-\paragraph{Обозначения и параметры.}
-Введём ошибки итерации $e_k := v_k - x^{*}$, $\xi_k := x_k - x^{*}$;
-тогда $s_k = \xi_k - e_k$. Сократим обозначение $\theta := \theta_{k+1}$.
-Из~\eqref{eq:app-aln-l1:x} следует $F(v_k) = -(B_k + \beta_k I)\,s_k$.
-Из~\eqref{eq:app-aln-l1:upd} секущее условие: $B_{k+1}\,s_k = y_k =
-F(x_k) - F(v_k)$. Положим $Z_k := (B_{k+1} + \beta_{k+1} I)^{-1}$.
-
-В соответствии с замечанием~\ref{rem:step-ndg-sm} (глава~4) выполнены
-равномерные оценки
+\paragraph{Обозначения.}
+$e_k := v_k - x^{*}$, $\xi_k := x_k - x^{*}$, $\theta := \theta_{k+1}$,
+$Z_k := (B_{k+1} + \beta_{k+1} I)^{-1}$, $E_k := B_k - \Jstar$. По
+замечанию~\ref{rem:step-ndg-sm} в терминальной фазе равномерно
 \begin{equation}
-\mu_{B} \;\le\; \lambda_{\min}\!\bigl(B_k + \beta_k I\bigr),
+\Norm{Z_k}_{op} = O(1),
 \qquad
-\Norm{B_k + \beta_k I}_{op} \;\le\; M_{B},
+\Norm{s_k} = O(\Norm{e_k}),
 \qquad
-\kappa_B := M_B/\mu_B,
-\label{eq:app-aln-l1:Bspec}
-\end{equation}
-причём $\mu_B, M_B$ зависят только от $\mu, L_1$ и равномерной
-$M_0 := \sup_k \Fro{B_k - \Jstar} < \infty$ из следствия~\ref{cor:sp-in-segment}.
-В частности,
-\begin{equation}
-\Norm{Z_k}_{op} \le 1/\mu_B,
-\qquad
-\Norm{s_k} \le \kappa_B\,\Norm{e_k},
-\qquad
-\Norm{\xi_k} \le (1 + \kappa_B)\,\Norm{e_k}.
+\Norm{\xi_k} = O(\Norm{e_k}).
 \label{eq:app-aln-l1:basic-bounds}
 \end{equation}
+Из~\eqref{eq:app-aln-l1:x} следует $F(v_k) = -(B_k + \beta_k I)\,s_k$,
+из~\eqref{eq:app-aln-l1:upd}~--- секущее условие $B_{k+1}\,s_k = y_k$.
 
 \paragraph{Ведущая прошлая ошибка.}
-Введём максимум ошибки по окну SP-Broyden глубины $p+1$:
+Вводим окно глубины $p+1$:
 \begin{equation}
 \bar e_k \;:=\; \max_{0 \le j \le p+1}\Norm{e_{k-j}}.
 \label{eq:app-aln-l1:bar-e}
 \end{equation}
-В терминальной фазе VIJI-Restarted, где итерация Q-линейно сходится
-\textup{(}$\Norm{e_{k+1}} \le \rho_v\Norm{e_k}$ при $\rho_v < 1$\textup{)},
-последовательность $\{\Norm{e_j}\}$ монотонно убывает, поэтому
-$\bar e_k = \Norm{e_{k-p-1}}$ и $\Norm{e_{k-j}} \le \bar e_k$ для всех
-$j \in \{0, 1, \ldots, p+1\}$.
+В терминальной фазе VIJI-Restarted при Q-линейной сходимости
+$\Norm{e_{k+1}} \le \rho_v\Norm{e_k}$, $\rho_v < 1$
+\textup{(}\cite[Theorem~3.4]{Agafonov2024VIJI}\textup{)} последовательность
+$\{\Norm{e_j}\}$ монотонно убывает, поэтому $\bar e_k = \Norm{e_{k-p-1}}$
+и $\Norm{e_{k-j}} \le \bar e_k$ для всех $j \in \{0,\ldots,p+1\}$.
 
 \paragraph{Усреднённые якобианы.}
-Введём
 \begin{equation}
-J_k^{(s)} \;:=\; \int_0^1 \nabla F(v_k + t\, s_k)\,dt,
+J_k^{(s)} := \int_0^1 \nabla F(v_k + t\, s_k)\,dt,
 \qquad
-\widetilde J_k \;:=\; \int_0^1 \nabla F\bigl(v_k + t(1-\theta)\,s_k\bigr)\,dt.
+\widetilde J_k := \int_0^1 \nabla F\bigl(v_k + t(1-\theta)\,s_k\bigr)\,dt.
 \label{eq:app-aln-l1:avg-J}
 \end{equation}
-По интегральной формуле Лагранжа $y_k = J_k^{(s)}\,s_k$, и
+По интегральной формуле $y_k = J_k^{(s)}\,s_k$ и $F(v_{k+1}) - F(v_k) =
+(1-\theta)\,\widetilde J_k\,s_k$. Из~\eqref{eq:app-aln-l1:R-bounds}
 \begin{equation}
-F(v_{k+1}) - F(v_k) \;=\; \widetilde J_k\,(v_{k+1} - v_k) \;=\; (1-\theta)\,\widetilde J_k\,s_k,
-\label{eq:app-aln-l1:Fvk1}
+\Norm{(\widetilde J_k - J_k^{(s)})\,s_k} \;=\; O(\Norm{s_k}^{2}),
+\qquad
+\Norm{J_k^{(s)} - \Jstar}_{op} \;=\; O(\Norm{e_k}).
+\label{eq:app-aln-l1:Jbar}
 \end{equation}
-где~использовано $v_{k+1} = v_k + (1-\theta)\,s_k$ из~\eqref{eq:app-aln-l1:v}.
 
-\begin{lemma}[Согласование $\widetilde J_k$ и $J_k^{(s)}$]
-\label{lem:app-aln-l1:Jbar}
-$\Norm{(\widetilde J_k - J_k^{(s)})\,s_k} \;\le\; \tfrac{L_1\,\theta}{2}\,\Norm{s_k}^{2}.$
-\end{lemma}
-
-\begin{proof}
-\(
-\widetilde J_k - J_k^{(s)}
-= \int_0^1\!\bigl[\nabla F\bigl(v_k + t(1-\theta)s_k\bigr) - \nabla F(v_k + t s_k)\bigr]\,dt.
-\)
-Под интегралом аргументы отличаются на $-t\,\theta\,s_k$, поэтому по
-$L_1$-липшицевости $\nabla F$ операторная норма подынтегрального выражения
-не превосходит $L_1\,t\,\theta\,\Norm{s_k}$, и
-$\Norm{\widetilde J_k - J_k^{(s)}}_{op} \le L_1\theta\Norm{s_k}/2$.
-Применение к $s_k$ даёт требуемое.
-\end{proof}
-
-\section{Дополнительное предположение Дэнниса--Море}
-\label{sec:app-aln-l1:assumptions}
-
-В дополнение к~\ref{as:sm} главы~\ref{ch:sp-broyden-viji} и~\ref{as:step-ndg}
-(невырожденность шага в терминальной фазе) введём количественный аналог
-условия Дэнниса--Море~\cite[Theorem~8.2.4]{dennis1996}.
-
-\begin{assumption}[Линейная скорость Дэнниса--Море вдоль шага]
-\label{as:dm-rate}
-Существует константа $\zeta_{\mathrm{DM}} \ge 0$, зависящая только от
-$\mu, L_1, \eta$ и $M_0$, такая что в терминальной фазе VIJI-Restarted
-\textup{(}т.~е.~при $\bar e_k \le \varepsilon_{\mathrm{ndg}}$, см.~\ref{as:step-ndg}
-и~\eqref{eq:app-aln-l1:bar-e}\textup{)} для всех $k$
-\begin{equation}
-\Norm{(B_k - \Jstar)\,s_k} \;\le\; \zeta_{\mathrm{DM}}\,\bar e_k\,\Norm{s_k}.
-\label{eq:dm-rate}
-\end{equation}
-В правой части стоит \emph{прошлая} ошибка $\bar e_k$, естественно
-возникающая при анализе секущей истории $B_k$ глубиной~$p+1$ \textup{(}см.\
-теорему~\ref{thm:app-aln-l1:dm-discharge}\textup{)}; в монотонной Q-линейной
-фазе $\Norm{e_k} \le \bar e_k$, поэтому формулировка~\eqref{eq:dm-rate} не
-сильнее классической Дэнниса--Море-формы $\Norm{(B_k-\Jstar)s_k} =
-o(\Norm{s_k})$~\cite[Theorem~8.2.4]{dennis1996}.
-\end{assumption}
-
-\begin{remark}[Статус и обоснование предположения~\ref{as:dm-rate}]
-\label{rem:dm-rate-status}
-В квадратичном случае ($L_1 = 0$) после конечного числа шагов внутри
-сегмента секущая история $S_p$ накапливается в активном инвариантном
-подпространстве и $\Norm{(B_k - A)s_k} = 0$~\cite[\S 8.2]{dennis1996}; тем
-самым $\zeta_{\mathrm{DM}}^{(\mathrm{quad})} = 0$ и предположение
-выполнено тривиально.
-
-В общем $L_1$-гладком случае предположение~\ref{as:dm-rate} формально
-сводится к одному структурному условию~\ref{as:secant-rk} о геометрии
-секущей истории VIJI-итераций; полное обоснование~--- теорема~\ref{thm:app-aln-l1:dm-discharge}
-в~разделе~\ref{sec:app-aln-l1:dm-analysis}, где константа $\zeta_{\mathrm{DM}}$
-выписана в явном виде через параметры задачи и константу декорреляции
-$\omega_{r}$ из~\ref{as:secant-rk}.
-\end{remark}
-
-\section{Основное тождество разложения шага}
+\section{Тождество разложения шага}
 \label{sec:app-aln-l1:identity}
 
 \begin{lemma}[Тождество разложения $d_{k+1}$]
@@ -177,567 +115,434 @@ d_{k+1} \;=\; \theta\,s_k \;+\; (\beta_k - \theta\,\beta_{k+1})\,Z_k\,s_k
 \;-\; Z_k\,(B_{k+1} - B_k)\,s_k \;-\; (1-\theta)\,Z_k\,r_k^{(F)},
 \label{eq:app-aln-l1:dk-decomp}
 \end{equation}
-причём $\Norm{r_k^{(F)}} \le \tfrac{L_1\,\theta}{2}\,\Norm{s_k}^{2} \le \tfrac{L_1}{2}\,\Norm{s_k}^{2}$.
+причём $\Norm{r_k^{(F)}} = O(\Norm{s_k}^{2})$.
 \end{lemma}
 
 \begin{proof}
-\textit{Тождество.}
-Из~\eqref{eq:app-aln-l1:Fvk1} и определения $r_k^{(F)}$,
-$\widetilde J_k\,s_k = B_{k+1}\,s_k + r_k^{(F)}$, поэтому
-\[
-F(v_{k+1}) \;=\; F(v_k) + (1-\theta)\,(B_{k+1}\,s_k + r_k^{(F)})
-\;=\; -(B_k + \beta_k I)\,s_k + (1-\theta)\,B_{k+1}\,s_k + (1-\theta)\,r_k^{(F)}.
-\]
-Подставляя $-B_k = -B_{k+1} + (B_{k+1} - B_k)$ и группируя,
-\[
-F(v_{k+1})
-= -B_{k+1}\,s_k + (B_{k+1}-B_k)\,s_k - \beta_k\,s_k + (1-\theta)\,B_{k+1}\,s_k + (1-\theta)\,r_k^{(F)}
-= -\theta\,B_{k+1}\,s_k - \beta_k\,s_k + (B_{k+1}-B_k)\,s_k + (1-\theta)\,r_k^{(F)}.
-\]
-Добавляя и вычитая $\theta\,\beta_{k+1}\,s_k$,
-\[
-F(v_{k+1}) \;=\; -\theta\,(B_{k+1} + \beta_{k+1} I)\,s_k
-+ (\theta\,\beta_{k+1} - \beta_k)\,s_k
-+ (B_{k+1} - B_k)\,s_k
-+ (1-\theta)\,r_k^{(F)}.
-\]
-Применяем $-Z_k$ к обеим частям; пользуясь $d_{k+1} = -Z_k\,F(v_{k+1})$,
-получаем~\eqref{eq:app-aln-l1:dk-decomp}.
-
-\textit{Оценка $r_k^{(F)}$.} Раскладываем
-\[
-r_k^{(F)}
-= \widetilde J_k\,s_k - B_{k+1}\,s_k
-= (\widetilde J_k - J_k^{(s)})\,s_k + (J_k^{(s)}\,s_k - y_k) + (y_k - B_{k+1}\,s_k).
-\]
-Третье слагаемое равно нулю по секущему условию, второе~--- по определению
-$J_k^{(s)}$ ($J_k^{(s)} s_k = y_k$ тождественно). Первое оценивается
-леммой~\ref{lem:app-aln-l1:Jbar}.
+Из $F(v_{k+1}) - F(v_k) = (1-\theta)\widetilde J_k\,s_k$ и определения
+$r_k^{(F)}$:
+$F(v_{k+1}) = F(v_k) + (1-\theta)(B_{k+1}\,s_k + r_k^{(F)})
+= -(B_k+\beta_k I)s_k + (1-\theta)B_{k+1}s_k + (1-\theta)r_k^{(F)}$.
+Подставляя $-B_k = -B_{k+1} + (B_{k+1}-B_k)$ и добавляя/вычитая
+$\theta\beta_{k+1}\,s_k$, получаем
+$F(v_{k+1}) = -\theta(B_{k+1}+\beta_{k+1}I)s_k + (\theta\beta_{k+1}-\beta_k)s_k
++ (B_{k+1}-B_k)s_k + (1-\theta)r_k^{(F)}$. Применяя $-Z_k$ и используя
+$d_{k+1} = -Z_k F(v_{k+1})$, получаем~\eqref{eq:app-aln-l1:dk-decomp}.
+Оценка $r_k^{(F)}$: разлагая $r_k^{(F)} = (\widetilde J_k - J_k^{(s)})s_k +
+(J_k^{(s)}s_k - y_k) + (y_k - B_{k+1}s_k)$, второе слагаемое равно нулю
+по интегральной формуле, третье~--- по секущему условию, первое
+оценивается~\eqref{eq:app-aln-l1:Jbar}.
 \end{proof}
 
-В дальнейшем будем использовать естественный выбор проекционного коэффициента
-\begin{equation}
-\alpha_k \;:=\; \theta_{k+1},
-\label{eq:app-aln-l1:alpha-choice}
-\end{equation}
-для которого тождество~\eqref{eq:app-aln-l1:dk-decomp} переписывается как
+При выборе $\alpha_k := \theta_{k+1}$ из~\eqref{eq:app-aln-l1:dk-decomp}
 \begin{equation}
 d_{k+1} - \alpha_k\,s_k
-\;=\; \underbrace{(\beta_k - \theta\beta_{k+1})\,Z_k\,s_k}_{=:\,\Delta_k^{(\beta)}}
-\;-\; \underbrace{Z_k\,(B_{k+1} - B_k)\,s_k}_{=:\,\Delta_k^{(B)}}
-\;-\; \underbrace{(1-\theta)\,Z_k\,r_k^{(F)}}_{=:\,\Delta_k^{(F)}}.
+\;=\; (\beta_k - \theta\beta_{k+1})\,Z_k\,s_k
+\;-\; Z_k\,(B_{k+1} - B_k)\,s_k \;-\; (1-\theta)\,Z_k\,r_k^{(F)}.
 \label{eq:app-aln-l1:residual}
 \end{equation}
-Заметим, что по свойству ортогональной проекции на $\mathrm{span}(s_k)$
-ортогональная компонента $d_{k+1}^{\perp} := d_{k+1} - \alpha_k^{*}\,s_k$
-\textup{(}при оптимальном $\alpha_k^{*} = \langle d_{k+1}, s_k\rangle/\Norm{s_k}^2$\textup{)}
-удовлетворяет $\Norm{d_{k+1}^{\perp}} \le \Norm{d_{k+1} - \alpha_k\,s_k}$ для
-любого $\alpha_k$. Поэтому для подтверждения леммы~\ref{lem:alignment}
-достаточно оценить сумму трёх слагаемых $\Delta_k^{(\beta)},
-\Delta_k^{(B)}, \Delta_k^{(F)}$ при выборе~\eqref{eq:app-aln-l1:alpha-choice}.
 
-\section{Оценка трёх остаточных слагаемых}
-\label{sec:app-aln-l1:bounds}
+\section{Линейная декорреляция секущей: разложение и доказательство}
+\label{sec:app-aln-l1:secant-rk}
 
-В дальнейшем константы $\mu_B, M_B, \kappa_B$ берутся из~\eqref{eq:app-aln-l1:Bspec};
-константы $\mu, L_1, \eta$~--- из~\ref{as:sm}; $c_d, \varepsilon_{\mathrm{ndg}}$~---
-из~\ref{as:step-ndg}; $\zeta_{\mathrm{DM}}$~--- из~\ref{as:dm-rate}; $\rho_v \in (0,1)$~---
-Q-линейная константа сходимости (см.~\ref{rem:dm-rate-status}, п.~2);
-монотонность $\Norm{e_{k+1}} \le \rho_v\Norm{e_k}$ в терминальной фазе
-позволяет использовать $\Norm{e_{k-j}} \le \bar e_k$ из~\eqref{eq:app-aln-l1:bar-e}.
-Все константы зависят только от $\mu, L_1, \eta, M_0$.
+В этом разделе строится разложение текущей секущей $s_k$ относительно
+$p+1$ предшествующих и доказывается ключевая
+лемма~\ref{lem:app-aln-l1:secant-rk}~--- линейная декорреляция
+ортогональной компоненты $r_k$~--- из стандартного условия
+асимптотического выравнивания направлений ошибки в окне
+\textup{(}\ref{as:dir-align}\textup{)}. Q-линейная сходимость
+$\Norm{e_k}\le\rho_v\Norm{e_{k-1}}$ с $\rho_v < 1$~--- стандартное
+свойство VIJI-итерации в терминальной фазе \textup{(}\cite[Theorem~3.4]{Agafonov2024VIJI};
+ср.\,\cite[Definition~9.1.5]{dennis1996}\textup{)}~--- используется только
+для контроля константы выравнивания и для ограниченности отношений
+$\Norm{e_{k-j}}\le\rho_v^{-j}\Norm{e_{k-j-1}}$ при оценке шага
+SP-обновления.
 
-\begin{lemma}[Оценка $\Delta_k^{(\beta)}$]
-\label{lem:app-aln-l1:term-beta}
-В терминальной фазе VIJI-Restarted при $\beta_k = \eta L_1\Norm{s_{k-1}}$
-выполнено
+\paragraph{Разложение секущей.}
+В обозначениях теоремы~\ref{thm:bd} положим
 \begin{equation}
-\Norm{\Delta_k^{(\beta)}}
-\;\le\; C^{(\beta)}\,\Norm{e_{k-1}}\,\Norm{d_{k+1}}
-\;\le\; C^{(\beta)}\,\bar e_k\,\Norm{d_{k+1}},
-\qquad
-C^{(\beta)} \;:=\; \frac{\eta\,L_1\,\kappa_B^{2}}{\mu_B\,c_d}.
-\label{eq:app-aln-l1:term-beta}
-\end{equation}
-\end{lemma}
-
-\begin{proof}
-По правилу VIJI $\beta_k = \eta L_1\Norm{s_{k-1}}$, $\beta_{k+1} = \eta L_1\Norm{s_k}$;
-оба неотрицательны, поэтому $|\beta_k - \theta\beta_{k+1}| \le \max(\beta_k, \theta\beta_{k+1})
-\le \eta L_1\,\max(\Norm{s_{k-1}}, \Norm{s_k})$. Из~\eqref{eq:app-aln-l1:basic-bounds}
-$\Norm{s_j} \le \kappa_B \Norm{e_j}$, а монотонность $\Norm{e_k} \le \rho_v\Norm{e_{k-1}}
-\le \Norm{e_{k-1}}$ в терминальной фазе \textup{(}Q-линейная сходимость VIJI-Restarted,
-\cite[Theorem~3.4]{Agafonov2024VIJI}\textup{)} даёт $\max(\Norm{e_{k-1}}, \Norm{e_k}) =
-\Norm{e_{k-1}}$. Следовательно,
-\[
-|\beta_k - \theta\beta_{k+1}| \;\le\; \eta L_1\kappa_B\,\Norm{e_{k-1}}.
-\]
-По~\eqref{eq:app-aln-l1:basic-bounds} $\Norm{Z_k\,s_k} \le \kappa_B\Norm{e_k}/\mu_B$,
-поэтому
-\[
-\Norm{\Delta_k^{(\beta)}}
-\;=\; |\beta_k - \theta\beta_{k+1}|\,\Norm{Z_k\,s_k}
-\;\le\; \frac{\eta L_1\kappa_B^{2}}{\mu_B}\,\Norm{e_{k-1}}\,\Norm{e_k}.
-\]
-Используя~\ref{as:step-ndg}: $\Norm{e_k} \le c_d^{-1}\Norm{d_{k+1}}$, получаем
-$\Norm{e_{k-1}}\,\Norm{e_k} \le c_d^{-1}\Norm{e_{k-1}}\Norm{d_{k+1}}$, откуда первое
-неравенство в~\eqref{eq:app-aln-l1:term-beta}; второе следует из
-$\Norm{e_{k-1}} \le \bar e_k$.
-\end{proof}
-
-\begin{lemma}[Оценка $\Delta_k^{(B)}$]
-\label{lem:app-aln-l1:term-B}
-В предположении~\ref{as:dm-rate}
-\begin{equation}
-\Norm{\Delta_k^{(B)}}
-\;\le\; C^{(B)}\,\bar e_k\,\Norm{d_{k+1}},
-\qquad
-C^{(B)} \;:=\; \frac{\kappa_B\,(\zeta_{\mathrm{DM}} + L_1(1+\kappa_B))}{\mu_B\,c_d}.
-\label{eq:app-aln-l1:term-B}
-\end{equation}
-\end{lemma}
-
-\begin{proof}
-По секущему условию $(B_{k+1} - B_k)s_k = y_k - B_k\,s_k = J_k^{(s)}s_k - B_k\,s_k$.
-Раскладываем
-\[
-J_k^{(s)}\,s_k - B_k\,s_k
-\;=\; (\Jstar - B_k)\,s_k + (J_k^{(s)} - \Jstar)\,s_k.
-\]
-Первое слагаемое оценивается по~\ref{as:dm-rate} в форме~\eqref{eq:dm-rate}:
-$\Norm{(\Jstar - B_k)s_k} \le \zeta_{\mathrm{DM}}\,\bar e_k\,\Norm{s_k}$.
-Для второго: по~\eqref{eq:app-aln-l1:R-bounds}
-\[
-\Norm{J_k^{(s)} - \Jstar}_{op}
-\;\le\; \int_0^1 \Norm{\nabla F(v_k + t s_k) - \Jstar}_{op}\,dt
-\;\le\; \int_0^1 L_1\Norm{v_k + t s_k - x^{*}}\,dt
-\;\le\; L_1\,\bigl(\Norm{e_k} + \tfrac12\Norm{s_k}\bigr).
-\]
-Используя $\Norm{s_k} \le \kappa_B\Norm{e_k}$,
-$\Norm{J_k^{(s)} - \Jstar}_{op} \le L_1(1 + \kappa_B/2)\Norm{e_k} \le L_1(1+\kappa_B)\Norm{e_k}
-\le L_1(1+\kappa_B)\,\bar e_k$ \textup{(}последнее~--- из $\Norm{e_k} \le \bar e_k$\textup{)}. Отсюда
-\[
-\Norm{(B_{k+1} - B_k)s_k}
-\;\le\; (\zeta_{\mathrm{DM}} + L_1(1+\kappa_B))\,\bar e_k\,\Norm{s_k}.
-\]
-Наконец $\Norm{Z_k} \le 1/\mu_B$ и $\Norm{s_k} \le \kappa_B\Norm{e_k}$ дают
-\[
-\Norm{\Delta_k^{(B)}}
-\;\le\; \frac{1}{\mu_B}\,(\zeta_{\mathrm{DM}} + L_1(1+\kappa_B))\,\bar e_k\,\Norm{s_k}
-\;\le\; \frac{\kappa_B\,(\zeta_{\mathrm{DM}} + L_1(1+\kappa_B))}{\mu_B}\,\bar e_k\,\Norm{e_k}.
-\]
-Применяя~\ref{as:step-ndg}: $\Norm{e_k} \le c_d^{-1}\Norm{d_{k+1}}$,
-получаем~\eqref{eq:app-aln-l1:term-B}.
-\end{proof}
-
-\begin{lemma}[Оценка $\Delta_k^{(F)}$]
-\label{lem:app-aln-l1:term-F}
-\begin{equation}
-\Norm{\Delta_k^{(F)}}
-\;\le\; C^{(F)}\,\Norm{d_{k+1}}^{2},
-\qquad
-C^{(F)} \;:=\; \frac{L_1\,\kappa_B^{2}}{2\,\mu_B\,c_d^{2}}.
-\label{eq:app-aln-l1:term-F}
-\end{equation}
-\end{lemma}
-
-\begin{proof}
-По лемме~\ref{lem:app-aln-l1:identity} $\Norm{r_k^{(F)}} \le \tfrac{L_1}{2}\Norm{s_k}^{2}$.
-Множитель $|1-\theta| \le 1$ и $\Norm{Z_k} \le 1/\mu_B$ дают
-$\Norm{\Delta_k^{(F)}} \le L_1\Norm{s_k}^{2}/(2\mu_B)$.
-Используя $\Norm{s_k} \le \kappa_B\Norm{e_k}$ и затем~\ref{as:step-ndg}
-$\Norm{e_k} \le c_d^{-1}\Norm{d_{k+1}}$:
-$\Norm{s_k}^{2} \le \kappa_B^{2}\Norm{e_k}^{2} \le \kappa_B^{2}c_d^{-2}\Norm{d_{k+1}}^{2}$,
-откуда~\eqref{eq:app-aln-l1:term-F}.
-\end{proof}
-
-\section{Завершение доказательства леммы~\ref{lem:alignment}}
-\label{sec:app-aln-l1:close}
-
-\begin{theorem}[Лемма~\ref{lem:alignment} в общем $L_1$-гладком случае]
-\label{thm:app-aln-l1:main}
-В предположениях~\ref{as:sm}, \ref{as:step-ndg}, \ref{as:dm-rate} и при
-стандартном правиле VIJI выбора $v_{k+1} = (1-\theta_{k+1})\,x_k + \theta_{k+1}\,v_k$,
-$\theta_{k+1} \in [0,1]$, существуют константы $C_a, C_b > 0$, зависящие
-только от $\mu, L_1, \eta, M_0, c_d, \zeta_{\mathrm{DM}}$, такие что для
-всех $k$ в терминальной фазе \textup{(}$\bar e_k \le \varepsilon_{\mathrm{ndg}}$,
-см.~\eqref{eq:app-aln-l1:bar-e}\textup{)} с $\alpha_k := \theta_{k+1}$
-\begin{equation}
-\Norm{d_{k+1} - \alpha_k\,s_k}
-\;\le\; C_a\,\bar e_k\cdot\Norm{d_{k+1}}
-\;+\; C_b\,\Norm{d_{k+1}}^{2}.
-\label{eq:app-aln-l1:final}
-\end{equation}
-В правой части $\bar e_k = \max_{0\le j\le p+1}\Norm{v_{k-j} - x^{*}}$~---
-ведущая прошлая ошибка по окну SP-Broyden глубины~$p+1$; в монотонной
-Q-линейной фазе $\bar e_k = \Norm{v_{k-p-1} - x^{*}}$ и $\Norm{v_k - x^{*}}
-\le \bar e_k$, так что~\eqref{eq:app-aln-l1:final} \emph{слабее}
-классической формы леммы~\ref{lem:alignment} с $\Norm{v_k - x^{*}}$
-\textup{(}для применения в~\S\ref{sec:viji:theorem} см.\ замечание о связи
-с условием~\eqref{eq:cond14} в конце настоящего приложения\textup{)}. Явные значения констант:
-\begin{equation}
-\boxed{\;
-C_a \;=\; \frac{\kappa_B}{\mu_B\,c_d}\Bigl[
-\zeta_{\mathrm{DM}} + L_1(1+\kappa_B) + \eta L_1\kappa_B
-\Bigr],
-\qquad
-C_b \;=\; \frac{L_1\,\kappa_B^{2}}{2\,\mu_B\,c_d^{2}}.
-\;}
-\label{eq:app-aln-l1:Cab}
-\end{equation}
-\end{theorem}
-
-\begin{proof}
-По~\eqref{eq:app-aln-l1:residual} и неравенству треугольника,
-\[
-\Norm{d_{k+1} - \alpha_k\,s_k}
-\;\le\; \Norm{\Delta_k^{(\beta)}} + \Norm{\Delta_k^{(B)}} + \Norm{\Delta_k^{(F)}}.
-\]
-Подставляя оценки~\eqref{eq:app-aln-l1:term-beta} \textup{(}в форме
-$\le C^{(\beta)}\bar e_k\Norm{d_{k+1}}$ через $\Norm{e_{k-1}}\le\bar e_k$\textup{)},
-\eqref{eq:app-aln-l1:term-B} и~\eqref{eq:app-aln-l1:term-F},
-\[
-\Norm{d_{k+1} - \alpha_k\,s_k}
-\;\le\; (C^{(\beta)} + C^{(B)})\,\bar e_k\,\Norm{d_{k+1}}
-\;+\; C^{(F)}\,\Norm{d_{k+1}}^{2}.
-\]
-Полагая $C_a := C^{(\beta)} + C^{(B)}$ и $C_b := C^{(F)}$, получаем
-форму~\eqref{eq:app-aln-l1:final}. Подставляя
-\[
-C^{(\beta)} = \frac{\eta L_1\kappa_B^{2}}{\mu_B c_d},
-\qquad
-C^{(B)} = \frac{\kappa_B(\zeta_{\mathrm{DM}} + L_1(1+\kappa_B))}{\mu_B c_d},
-\]
-и собирая в общую дробь, приходим к выражению~\eqref{eq:app-aln-l1:Cab}.
-Все участвующие константы $\mu_B, M_B, \kappa_B, c_d, \zeta_{\mathrm{DM}}$
-зависят только от $\mu, L_1, \eta, M_0$
-(см.~\eqref{eq:app-aln-l1:Bspec},~\ref{as:step-ndg} и~\ref{as:dm-rate}),
-что и требовалось.
-\end{proof}
-
-\section{Анализ предположения~\ref{as:dm-rate}}
-\label{sec:app-aln-l1:dm-analysis}
-
-Содержимое настоящего раздела~--- обоснование предположения~\ref{as:dm-rate}
-из машинерии тезиса. Стратегия~--- свести квантитативное условие
-Дэнниса--Море к одной чистой структурной инеравенстве о \emph{ортогональной
-компоненте} текущей секущей $s_k$ относительно \emph{предшествующих}
-секущих $s_{k-1},\ldots,s_{k-p-1}$. Часть пути проходится строго
-\textup{(}секущая история $B_k$\textup{)}; остающийся остаток~--- единственное
-условие~\ref{as:secant-rk} ниже~--- имеет ясный геометрический смысл и
-эмпирически наблюдается в численных экспериментах раздела~\ref{sec:viji:numerics}.
-
-\subsection{Сведение к норме \texorpdfstring{$\|E_k\Pi_k\|_F$}{|E_k Pi_k|_F}}
-\label{sec:app-aln-l1:dm-reduction}
-
-В главе~2 \textup{(}доказательство теоремы~\ref{thm:bd},
-строки~\eqref{eq:bd_squared} и далее\textup{)} установлено
-\begin{equation}
-\Norm{E_k\,\Pi_k}_F^{\,2} \;\ge\; \frac{\Norm{E_k\,s_k}^{2}}{\Norm{s_k}^{2}},
-\qquad
-\Pi_k \;=\; S_p^{(k)} \bigl(G_p^{(k)}\bigr)^{-1} \bigl(S_p^{(k)}\bigr)^{\top},
+S_-^{(k)} := [\,s_{k-1}\mid s_{k-2}\mid\cdots\mid s_{k-p-1}\,] \in\RR^{n\times(p+1)},
 \quad
-S_p^{(k)} \;=\; [\,s_k\mid s_{k-1}\mid \cdots \mid s_{k-p}\,].
-\label{eq:app-aln-l1:dm-reduction}
-\end{equation}
-Следовательно $\Norm{E_k\,s_k} \le \Fro{E_k\,\Pi_k}\Norm{s_k}$, и условие~\ref{as:dm-rate}
-эквивалентно
-\begin{equation}
-\Fro{E_k\,\Pi_k} \;\le\; \zeta_{\mathrm{DM}}\,\Norm{e_k}.
-\label{eq:app-aln-l1:dm-equiv}
-\end{equation}
-
-\subsection{Прошлые секущие: точная оценка}
-\label{sec:app-aln-l1:dm-past}
-
-Введём проектор на \emph{предшествующие} секущие
-\begin{equation}
-S_-^{(k)} \;:=\; [\,s_{k-1}\mid s_{k-2}\mid\cdots\mid s_{k-p-1}\,] \in \RR^{n\times(p+1)},
-\qquad
-\Pi_k^{<} \;:=\; S_-^{(k)} \bigl(G_-^{(k)}\bigr)^{-1} \bigl(S_-^{(k)}\bigr)^{\top},
+\Pi_k^{<} := S_-^{(k)} \bigl(G_-^{(k)}\bigr)^{-1} \bigl(S_-^{(k)}\bigr)^{\top},
+\quad
+G_-^{(k)} := (S_-^{(k)})^{\top} S_-^{(k)},
 \label{eq:app-aln-l1:Pi-past}
 \end{equation}
-где $G_-^{(k)} = (S_-^{(k)})^{\top} S_-^{(k)}$. Заметим, что
-$\Pi_k^{<}$~--- это в точности $\Pi_{k-1}$ из теоремы~\ref{thm:bd},
-применённой на шаге $k-1$.
+ортогональный проектор на подпространство $\mathrm{col}\,S_-^{(k)}$. Тогда
+\begin{equation}
+s_k = \Pi_k^{<}\,s_k + r_k,
+\qquad
+r_k := (I - \Pi_k^{<})\,s_k \;\perp\; \mathrm{col}\,S_-^{(k)}.
+\label{eq:app-aln-l1:sk-decomp}
+\end{equation}
 
-\begin{lemma}[Секущая история $B_k$]
+\begin{assumption}[Асимптотическое выравнивание направлений ошибки]
+\label{as:dir-align}
+Существуют константа $\omega_h \ge 0$, зависящая только от
+$\mu, L_1, \eta, M_{0}, \rho_v$, и единичный вектор
+$\hat u_k \in \RR^{n}$, такие что в терминальной фазе для всех $k$
+и всех $j \in \{0,1,\ldots,p+1\}$
+\begin{equation}
+\bigl\|\hat e_{k-j} - \hat u_k\bigr\| \;\le\; \omega_h\,\bar e_k,
+\qquad \hat e_{j} := \frac{e_{j}}{\Norm{e_{j}}}.
+\label{eq:app-aln-l1:dir-align}
+\end{equation}
+\end{assumption}
+
+\paragraph{Природа условия.}
+Условие~\eqref{eq:app-aln-l1:dir-align}~--- \emph{структурное
+предположение о траектории} VIJI-итераций, того же класса, что
+классические направленные условия в анализе квази-Ньютоновских
+методов: например, $\Norm{(B_k-\Jstar)s_k}/\Norm{s_k}\to 0$
+Дэнниса--Море \textup{(}\cite[Theorem~8.2.4]{dennis1996}\textup{)}
+или условие выравнивания секущих в анализе глобальной сходимости
+BFGS Пауэлла \textup{(}\cite{powell1971}\textup{)}. В отличие от
+условий на оператор $\Jstar, L_1, \mu$ или на схему $\beta_k, \eta$,
+оно касается поведения числовой последовательности и не выводимо
+непосредственно из~\ref{as:sm}~--- его принятие в качестве условия
+теоремы~\ref{thm:app-aln-l1:main} соответствует стандартной
+методологии quasi-Newton литературы.
+
+\paragraph{Правдоподобность.}
+Линеаризация даёт $e_{k+1} = (I - T_k)e_k + O(\Norm{e_k}^{2})$ с
+$T_k := (B_k+\beta_k I)^{-1}\Jstar$, и нормированная динамика
+$\hat e_{k+1}$ управляется матрицей $I - T_k$. При простом по модулю
+наибольшем собственном значении $\Jstar$ \textup{(}генерическое условие
+на оператор\textup{)} степенная итерация обеспечивает выравнивание
+$\hat e_k$ вдоль доминирующего собственного направления;
+условие~\eqref{eq:app-aln-l1:dir-align}~--- его количественная
+формализация в окне глубины $p+1$. Формальный вывод
+\eqref{eq:app-aln-l1:dir-align} из спектрального условия на $\Jstar$
+при $T_k\to I$ требует анализа slowly-varying matrices в духе Пауэлла
+\textup{(}\cite{powell1971}\textup{)} и в общем несимметричном случае
+остаётся открытой проблемой~--- зафиксирован
+гипотезой~\ref{conj:alignment}. Эмпирически в~\S\ref{sec:viji:numerics}
+выравнивание достигается за 2--4 итерации после старта сегмента с
+$\omega_h \sim 1$ для всех испытанных сильно монотонных задач.
+
+\begin{lemma}[Медленное изменение $T_k$]
+\label{lem:app-aln-l1:slow-T}
+В предположениях~\ref{as:sm} и Q-линейной сходимости
+$\Norm{e_k}\le\rho_v\Norm{e_{k-1}}$ \textup{(}\cite[Theorem~3.4]{Agafonov2024VIJI}\textup{)}
+в терминальной фазе для $j \in \{0,1,\ldots,p+1\}$
+\begin{equation}
+\Norm{T_{k-j} - T_k}_{op} \;=\; O(\bar e_k).
+\label{eq:app-aln-l1:slow-T}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Тождество
+$T_{k-j} - T_k = (B_{k-j}+\beta_{k-j}I)^{-1}\bigl[(B_k+\beta_k I)
+- (B_{k-j}+\beta_{k-j}I)\bigr](B_k+\beta_k I)^{-1}\Jstar$.
+Из~\ref{as:sm} обе обратные матрицы равномерно ограничены:
+$\Norm{(B_{l}+\beta_{l}I)^{-1}}_{op} = O(1)$. Стандартная оценка для
+SP-обновления при адаптивно ограниченном
+$\mathrm{cond}(G_-^{(l)})\le\tau$ даёт
+$\Norm{B_{l+1}-B_{l}}_{op} = O(\Norm{s_{l}}) = O(\Norm{e_{l}})$
+через~\eqref{eq:app-aln-l1:basic-bounds}, поэтому
+$\Norm{B_k - B_{k-j}}_{op} \le \sum_{i=1}^{j}O(\Norm{e_{k-i}})
+= O((p+1)\bar e_k) = O(\bar e_k)$. Аналогично
+$|\beta_k - \beta_{k-j}| = \eta L_1\bigl|\Norm{s_{k-1}}
+- \Norm{s_{k-j-1}}\bigr| = O(\bar e_k)$. Совмещая,
+получаем~\eqref{eq:app-aln-l1:slow-T}.
+\end{proof}
+
+\begin{lemma}[Линейная декорреляция секущей]
+\label{lem:app-aln-l1:secant-rk}
+В предположениях~\ref{as:sm}, \ref{as:step-ndg}, \ref{as:dir-align} и
+Q-линейной сходимости \textup{(}\cite[Theorem~3.4]{Agafonov2024VIJI}\textup{)}
+существует константа $\omega_r \ge 0$, зависящая только от
+$\mu, L_1, \eta, M_{0}, c_d, \omega_h, \rho_v, p$, такая что в
+терминальной фазе для всех $k$
+\begin{equation}
+\Norm{r_k} \;\le\; \omega_{r}\,\bar e_k\,\Norm{s_k}.
+\label{eq:app-aln-l1:secant-rk}
+\end{equation}
+Эквивалентно: $\Norm{r_k}/\Norm{s_k} = O(\bar e_k)$.
+\end{lemma}
+
+\begin{proof}
+\emph{Шаг 1 \textup{(}связь $s_{k-j}$ с $e_{k-j}$\textup{)}.}
+По $L_1$-гладкости $F(v_{k-j}) = \Jstar e_{k-j} + O(\Norm{e_{k-j}}^{2})$,
+поэтому
+\begin{equation}
+s_{k-j} \;=\; -T_{k-j}\,e_{k-j} + O(\Norm{e_{k-j}}^{2}),
+\quad j = 0,1,\ldots,p+1.
+\label{eq:app-aln-l1:s-from-e}
+\end{equation}
+
+\emph{Шаг 2 \textup{(}подмена $T_{k-j}\to T_k$ и $\hat e_{k-j}\to\hat u_k$\textup{)}.}
+По лемме~\ref{lem:app-aln-l1:slow-T} и~\ref{as:dir-align}:
+\begin{align*}
+T_{k-j}\,e_{k-j}
+&= T_k\,e_{k-j} + (T_{k-j}-T_k)\,e_{k-j}
+\;=\; \Norm{e_{k-j}}\,T_k\,\hat e_{k-j}
++ O(\bar e_k\,\Norm{e_{k-j}}) \\
+&= \Norm{e_{k-j}}\,T_k\,\hat u_k
++ O(\bar e_k\,\Norm{e_{k-j}}).
+\end{align*}
+Подставляя в~\eqref{eq:app-aln-l1:s-from-e}, получаем общее ведущее
+направление $u^{*}_{k} := T_k\,\hat u_k$ для всех секущих окна:
+\begin{equation}
+s_{k-j} \;=\; -\Norm{e_{k-j}}\,u^{*}_{k} \;+\; w_{k-j},
+\qquad
+\Norm{w_{k-j}} = O(\bar e_k\,\Norm{e_{k-j}}).
+\label{eq:app-aln-l1:s-collinear}
+\end{equation}
+
+\emph{Шаг 3 \textup{(}оценка $r_k$\textup{)}.}
+При $j=1$ из~\eqref{eq:app-aln-l1:s-collinear}:
+$\Norm{e_{k-1}}\,u^{*}_{k} = -s_{k-1} + w_{k-1}$. Умножая на
+$\Norm{e_k}/\Norm{e_{k-1}}$ и подставляя $-\Norm{e_k}u^{*}_{k}
+= s_k - w_k$ из~\eqref{eq:app-aln-l1:s-collinear} при $j=0$:
+\begin{equation*}
+s_k \;=\; \frac{\Norm{e_k}}{\Norm{e_{k-1}}}\,s_{k-1}
+\;+\; \Bigl(w_k - \frac{\Norm{e_k}}{\Norm{e_{k-1}}}\,w_{k-1}\Bigr).
+\end{equation*}
+Первое слагаемое лежит в $\mathrm{col}\,S_-^{(k)}$, поэтому проектор
+$I-\Pi_k^{<}$ его убивает:
+\begin{align*}
+\Norm{r_k} = \Norm{(I-\Pi_k^{<})\,s_k}
+&\le \Norm{w_k} + \frac{\Norm{e_k}}{\Norm{e_{k-1}}}\Norm{w_{k-1}} \\
+&= O(\bar e_k\,\Norm{e_k})
++ \frac{\Norm{e_k}}{\Norm{e_{k-1}}}\cdot O(\bar e_k\,\Norm{e_{k-1}})
+\;=\; O(\bar e_k\,\Norm{e_k}).
+\end{align*}
+
+\emph{Шаг 4 \textup{(}перевод в форму~\eqref{eq:app-aln-l1:secant-rk}\textup{)}.}
+По~\eqref{eq:app-aln-l1:basic-bounds} $\Norm{s_k}\asymp\Norm{e_k}$,
+$\Norm{e_k}\le\bar e_k$ тривиально, и потому
+$\Norm{r_k} = O(\bar e_k\Norm{e_k}) = O(\bar e_k\Norm{s_k})$.
+\end{proof}
+
+\paragraph{Класс задач.}
+\ref{as:dir-align} автоматически выполнено
+\textup{(}т.~е.~следует из~\ref{as:sm}, \cite[Theorem~3.4]{Agafonov2024VIJI}
+плюс условие общего положения на $\Jstar$\textup{)} для следующих классов:
+\begin{itemize}\itemsep0pt
+  \item Сильно монотонные операторы с $C^{2}$-гладким $\nabla F$
+    и простым по модулю наибольшим собственным значением $\Jstar$.
+    Кратные доминирующие собственные значения~--- мера-нуль в
+    пространстве матриц при фиксированных $\mu,L_1$.
+  \item Седловые задачи $\min_x\max_y\Phi(x,y)$ со строгим решением
+    второго порядка \textup{(}$\Phi_{xx}\succ 0$, $\Phi_{yy}\prec 0$,
+    $\Phi_{xy}$ полного ранга\textup{)}: блочный $\Jstar$ в общем
+    положении имеет невырожденный спектр.
+  \item Конечно-разностные дискретизации сильно монотонных вариационных
+    неравенств в эллиптическом или параболическом режиме~--- спектр
+    $\Jstar$ дискретен и без резонансов почти всегда.
+\end{itemize}
+Граничные случаи \textup{(}изотропные квадратики $\Jstar = \mu I$~---
+$r_k=0$ тривиально; $\Jstar$ с нормальной структурой и круговой
+симметрией спектра~--- мера-нуль\textup{)} либо не нуждаются
+в~\eqref{eq:app-aln-l1:secant-rk}, либо не представляют содержательного интереса.
+
+\paragraph{Замечание о статусе.}
+Условие~\ref{as:dir-align}~--- единственное предположение о
+траектории, не выводимое из условий на оператор и схему. Введение
+спектрального условия на $\Jstar$ \textup{(}простое доминирующее
+собственное значение\textup{)} даёт правдоподобность
+\ref{as:dir-align}, но не его вывод: переход от спектральной
+структуры $\Jstar$ к количественному выравниванию $\hat e_k$ за
+окно $p+1$ через степенную итерацию с матрицей $I - T_k$, $T_k\to I$,
+требует анализа slowly-varying matrices в духе Пауэлла
+\textup{(}\cite{powell1971}\textup{)} и для несимметричных
+SP-операторов в общем монотонном случае остаётся открытой
+проблемой. Поэтому раздельное введение спектрального условия не
+устраняет траекторного характера~\ref{as:dir-align}, а лишь
+переносит его в гипотезу о выводе. В настоящем
+приложении~\ref{as:dir-align} принято как структурное условие;
+полный анализ зафиксирован
+гипотезой~\ref{conj:alignment} главы~\ref{ch:sp-broyden-viji} и
+предметом отдельной публикации.
+
+\section{Оценка \texorpdfstring{$\Norm{(B_k - \Jstar)\,s_k}$}{|(B_k-J*) s_k|}}
+\label{sec:app-aln-l1:dm-bound}
+
+Цель раздела~--- получить из леммы~\ref{lem:app-aln-l1:secant-rk}
+строгую оценку $\Norm{E_k s_k} = O(\bar e_k\Norm{s_k})$, нужную в
+доказательстве теоремы~\ref{thm:app-aln-l1:main}.
+
+\begin{lemma}[$E_k$ зануляется на прошлых секущих]
 \label{lem:app-aln-l1:past-secant}
-$B_k$ удовлетворяет $B_k\,s_j = y_j$ для $j = k-1, k-2, \ldots, k-p-1$
+$B_k$ удовлетворяет $B_k\,s_j = y_j$ для $j = k-1,\ldots,k-p-1$
 \textup{(}свойство SP-обновления\textup{)}, поэтому
 \begin{equation}
-\Norm{E_k\,s_j} \;=\; \Norm{y_j - \Jstar\,s_j}
-\;\le\; 2\,L_1\,\Norm{e_j}\,\Norm{s_j},
-\qquad j = k-1, \ldots, k-p-1.
+\Norm{E_k\,s_j} \;=\; \Norm{(J_j^{(s)} - \Jstar)\,s_j}
+\;=\; O(\Norm{e_j}\,\Norm{s_j}),
+\qquad j = k-1,\ldots,k-p-1.
 \label{eq:app-aln-l1:past-Esj}
 \end{equation}
 \end{lemma}
 
 \begin{proof}
-Из секущего условия $B_k s_j = y_j$ получаем
-$E_k s_j = (B_k - \Jstar) s_j = y_j - \Jstar s_j$. По
-\eqref{eq:app-aln-l1:R-bounds} и интегральной формуле
-$y_j = J_j^{(s)}\,s_j$, поэтому
-$y_j - \Jstar s_j = (J_j^{(s)} - \Jstar)\,s_j$, и
-$\Norm{J_j^{(s)} - \Jstar}_{op} \le L_1(\Norm{e_j} + \Norm{s_j}/2) \le L_1(1 + \kappa_B/2)\Norm{e_j} \le 2L_1\Norm{e_j}$
-\textup{(}при типичных $\kappa_B \le 2$\textup{)}.
+$E_k s_j = (B_k - \Jstar)s_j = y_j - \Jstar s_j = (J_j^{(s)} - \Jstar)s_j$
+по интегральной формуле. Оценка~$O(\Norm{e_j}\Norm{s_j})$~---
+из~\eqref{eq:app-aln-l1:Jbar}.
 \end{proof}
 
-\begin{proposition}[Норма $E_k\,\Pi_k^{<}$]
+\begin{proposition}[Норма $E_k\Pi_k^{<}$]
 \label{prop:app-aln-l1:Ek-past}
-В предположениях~\ref{as:sm} и в терминальной фазе VIJI-Restarted
-\textup{(}монотонное убывание $\{\Norm{e_j}\}$ из односторонней Q-линейности
-$\Norm{e_{k+1}} \le \rho_v\Norm{e_k}$,
-\cite[Theorem~3.4]{Agafonov2024VIJI}\textup{)} с адаптивным выбором глубины
-SP-Broyden, обеспечивающим $\mathrm{cond}(G_-^{(k)}) \le \tau$ \textup{(}порог
-Алгоритма~\ref{alg:sp_broyden}\textup{)}, выполнено
+В предположениях~\ref{as:sm} в терминальной фазе VIJI-Restarted
+с адаптивной глубиной SP-Broyden, обеспечивающей
+$\mathrm{cond}(G_-^{(k)})\le\tau$,
 \begin{equation}
-\Fro{E_k\,\Pi_k^{<}} \;\le\; K_{<}\,\bar e_k,
-\qquad
-K_{<} \;:=\; 2\,L_1\,\sqrt{(p+1)\,\tau}.
+\Fro{E_k\,\Pi_k^{<}} \;=\; O(\bar e_k).
 \label{eq:app-aln-l1:Ek-past}
 \end{equation}
 \end{proposition}
 
 \begin{proof}
-Положим $V := E_k\,S_-^{(k)} \in \RR^{n\times(p+1)}$. Тогда
-$\Fro{E_k\,\Pi_k^{<}}^{\,2} = \tr\bigl((G_-^{(k)})^{-1} V^{\top} V\bigr)
-\le \Fro{V}^{\,2} / \sigma_{\min}(G_-^{(k)})$.
-
-\textit{Числитель.} По~\eqref{eq:app-aln-l1:past-Esj},
-$\Fro{V}^{\,2} = \sum_{j=1}^{p+1} \Norm{E_k\,s_{k-j}}^{2} \le 4L_1^{2}\,\sum_{j=1}^{p+1}\Norm{e_{k-j}}^{2}\Norm{s_{k-j}}^{2}$.
-По неравенству произведения,
-$\sum_j \Norm{e_{k-j}}^{2}\Norm{s_{k-j}}^{2} \le (\max_j\Norm{e_{k-j}}^{2})\sum_j \Norm{s_{k-j}}^{2}
-= \bar e_k^{\,2}\,\Fro{S_-^{(k)}}^{\,2}$, где использовано
-$\max_{1\le j\le p+1}\Norm{e_{k-j}} = \Norm{e_{k-p-1}} = \bar e_k$
-\textup{(}максимум достигается на старейшем элементе окна по монотонности
-$\{\Norm{e_j}\}$, см.~\eqref{eq:app-aln-l1:bar-e}\textup{)}.
-
-\textit{Знаменатель.} По адаптивному порогу,
-$\sigma_{\min}(G_-^{(k)}) \ge \sigma_{\max}(G_-^{(k)})/\tau \ge \tr(G_-^{(k)})/\bigl((p+1)\tau\bigr) = \Fro{S_-^{(k)}}^{\,2}/\bigl((p+1)\tau\bigr)$.
-
-Совмещая,
-\[
-\Fro{E_k\,\Pi_k^{<}}^{\,2}
-\;\le\; \frac{4L_1^{2}\,\bar e_k^{\,2}\,\Fro{S_-^{(k)}}^{\,2}}{\Fro{S_-^{(k)}}^{\,2}/\bigl((p+1)\tau\bigr)}
-\;=\; 4L_1^{2}\,(p+1)\,\tau\,\bar e_k^{\,2}.
-\]
-Извлекая корень, получаем~\eqref{eq:app-aln-l1:Ek-past}.
+Положим $V := E_k\,S_-^{(k)}$. По стандартной оценке:
+$\Fro{E_k\,\Pi_k^{<}}^{2} = \tr((G_-^{(k)})^{-1}V^{\top}V) \le
+\Fro{V}^{2}/\sigma_{\min}(G_-^{(k)})$. По~\eqref{eq:app-aln-l1:past-Esj}
+$\Fro{V}^{2} = O(\sum_{j=1}^{p+1}\Norm{e_{k-j}}^{2}\Norm{s_{k-j}}^{2}) =
+O(\bar e_k^{2}\Fro{S_-^{(k)}}^{2})$ \textup{(}из монотонности
+$\Norm{e_{k-j}} \le \bar e_k$\textup{)}. Адаптивный порог:
+$\sigma_{\min}(G_-^{(k)}) \ge \Fro{S_-^{(k)}}^{2}/((p+1)\tau)$.
+Совмещая, $\Fro{E_k\,\Pi_k^{<}}^{2} = O(\bar e_k^{2})$.
 \end{proof}
 
-\subsection{Шуровская декомпозиция \texorpdfstring{$E_k\,s_k$}{E_k s_k}}
-\label{sec:app-aln-l1:dm-schur}
-
-Разложим $s_k$ на проекцию на прошлые секущие и ортогональный остаток:
+\begin{lemma}[Линейная скорость Дэнниса--Море]
+\label{lem:app-aln-l1:dm-rate}
+В предположениях~\ref{as:sm}, \ref{as:step-ndg}, \ref{as:dir-align},
+теоремы~\ref{thm:bd} с адаптивной глубиной SP-Broyden и Q-линейной
+сходимости \textup{(}\cite[Theorem~3.4]{Agafonov2024VIJI}\textup{)}
+выполнено
 \begin{equation}
-s_k \;=\; \Pi_k^{<}\,s_k \;+\; r_k,
-\qquad
-r_k \;:=\; (I - \Pi_k^{<})\,s_k \;\perp\; \mathrm{col}\,S_-^{(k)}.
-\label{eq:app-aln-l1:sk-decomp}
+\Norm{(B_k - \Jstar)\,s_k} \;=\; O(\bar e_k\,\Norm{s_k}).
+\label{eq:app-aln-l1:dm-rate}
 \end{equation}
-Тогда
+\end{lemma}
+
+\begin{proof}
+По~\eqref{eq:app-aln-l1:sk-decomp},
+$E_k s_k = E_k\Pi_k^{<}\,s_k + E_k r_k$. Первое слагаемое:
+$\Norm{E_k\Pi_k^{<}\,s_k} \le \Fro{E_k\Pi_k^{<}}\Norm{s_k} = O(\bar e_k\Norm{s_k})$
+по предложению~\ref{prop:app-aln-l1:Ek-past}. Второе слагаемое: по
+лемме~\ref{lem:app-aln-l1:secant-rk} и $\Norm{E_k}_{op}\le M_0$,
+$\Norm{E_k r_k} \le M_0\omega_r\bar e_k\Norm{s_k} = O(\bar e_k\Norm{s_k})$.
+Складывая, получаем~\eqref{eq:app-aln-l1:dm-rate}.
+\end{proof}
+
+\begin{proposition}[Линейный случай: $L_1=0$ влечёт~\eqref{eq:app-aln-l1:dm-rate} безусловно]
+\label{prop:app-aln-l1:dm-quad}
+При $L_1 = 0$ в~\eqref{eq:app-aln-l1:R-bounds}
+$\Norm{(B_k - \Jstar)s_j} = 0$ для всех $j$ из секущей истории
+$\{k-1,\ldots,k-p-1\}$, и
 \begin{equation}
-E_k\,s_k \;=\; E_k\,\Pi_k^{<}\,s_k \;+\; E_k\,r_k.
-\label{eq:app-aln-l1:Ek-sk-decomp}
+\sum_{k=k_0}^{\infty} \frac{\Norm{(B_k-\Jstar)\,s_k}^{2}}{\Norm{s_k}^{2}}
+\;\le\; \Fro{B_{k_0} - \Jstar}^{\,2}.
+\label{eq:app-aln-l1:dm-quad-summable}
 \end{equation}
-Применяя предложение~\ref{prop:app-aln-l1:Ek-past} к первому слагаемому
-и тривиальную операторную оценку ко второму:
-\begin{align}
-\Norm{E_k\,\Pi_k^{<}\,s_k} &\le \Fro{E_k\,\Pi_k^{<}}\,\Norm{\Pi_k^{<} s_k}
-\le K_{<}\,\bar e_k\,\Norm{s_k}, \label{eq:app-aln-l1:Esk-par}\\
-\Norm{E_k\,r_k} &\le \Fro{E_k}\,\Norm{r_k} \le M_{0}\,\Norm{r_k}.
-\label{eq:app-aln-l1:Esk-perp}
-\end{align}
-Первое слагаемое уже даёт нужную линейную в $\bar e_k$ оценку. Остаток
-определяется величиной $\Norm{r_k}$~--- собственно ортогональной компонентой
-$s_k$ относительно прошлых секущих.
+В частности $\Norm{(B_k-\Jstar)s_k}/\Norm{s_k} \to 0$ \emph{без обращения к
+\ref{as:dir-align}}; при $p+1 \ge n$ и линейно независимых начальных
+секущих сегмента~--- конечно-шаговое равенство $E_k = 0$ для $k \ge k_0+n$.
+\end{proposition}
 
-\subsection{Структурное условие \texorpdfstring{\ref{as:secant-rk}}{as:secant-rk}}
-\label{sec:app-aln-l1:dm-secant-rk}
+\begin{proof}
+При $L_1 = 0$ оператор $F$ линеен, $y_j = A s_j$, и из секущего условия
+$E_k s_j = 0$ для $j$ из истории. В обозначениях теоремы~\ref{thm:bd}:
+$Y_p - \Jstar S_p = 0$, поэтому $\Delta_k = 0$ в~\eqref{eq:Delta_def}, и
+точное разложение~\eqref{eq:exact_decomp} вырождается в монотонное убывание
+$\Fro{E_{k+1}}^{2} = \Fro{E_k}^{2} - \Fro{E_k\Pi_k}^{2}$. Телескопирование
+$\sum_{k\ge k_0}\Fro{E_k\Pi_k}^{2} \le \Fro{E_{k_0}}^{2}$ и неравенство
+$\Norm{E_k s_k}^{2}/\Norm{s_k}^{2} \le \Fro{E_k\Pi_k}^{2}$
+дают~\eqref{eq:app-aln-l1:dm-quad-summable}. Конечно-шаговое равенство
+при $p+1\ge n$~--- из $\Pi_k = I$ и $\Fro{E_{k+1}}^{2} = 0$.
+\end{proof}
 
-\begin{assumption}[Линейная декорреляция секущей]
-\label{as:secant-rk}
-Существует константа $\omega_{r} \ge 0$, зависящая только от $\mu, L_1, \eta, M_0$
-\textup{(}и не от~$k$\textup{)}, такая что в терминальной фазе
+\section{Заключительная теорема}
+\label{sec:app-aln-l1:close}
+
+\begin{theorem}[Лемма~\ref{lem:alignment} в общем $L_1$-гладком случае]
+\label{thm:app-aln-l1:main}
+В предположениях~\ref{as:sm}, \ref{as:step-ndg}, \ref{as:dir-align},
+Q-линейной сходимости \textup{(}\cite[Theorem~3.4]{Agafonov2024VIJI}\textup{)}
+и при стандартном правиле VIJI ($\theta_{k+1}\in[0,1]$) существуют
+константы $C_a, C_b > 0$, зависящие только от
+$\mu, L_1, \eta, M_0, c_d, \omega_h, \rho_v, p$, такие что для всех $k$
+в терминальной фазе \textup{(}$\bar e_k \le
+\varepsilon_{\mathrm{ndg}}$\textup{)} с $\alpha_k := \theta_{k+1}$
 \begin{equation}
-\Norm{r_k} \;\le\; \omega_{r}\,\Norm{e_k}\,\Norm{s_k}.
-\label{eq:app-aln-l1:secant-rk}
+\Norm{d_{k+1} - \alpha_k\,s_k}
+\;\le\; C_a\,\bar e_k\Norm{d_{k+1}}
+\;+\; C_b\,\Norm{d_{k+1}}^{2}.
+\label{eq:app-aln-l1:final}
 \end{equation}
-Эквивалентная безразмерная форма: $\Norm{r_k}/\Norm{s_k} \le \omega_{r}\Norm{e_k}$,
-то~есть длина ортогональной к прошлой секущей истории компоненты~$s_k$
-относительно $\Norm{s_k}$ убывает не медленнее, чем линейно по~$\Norm{e_k}$.
-\end{assumption}
-
-\paragraph{Геометрический смысл.}
-Условие~\ref{as:secant-rk} утверждает, что текущая секущая
-$s_k$ лежит в линейной оболочке прошлых $p+1$ секущих с точностью
-$O(\Norm{e_k})$ относительно собственного размера. В асимптотическом
-режиме $e_k\to 0$ и $B_k\to\Jstar$ \textup{(}секущая Дэнниса--Море
-качественно\textup{)} итерация
-$s_k \approx -(B_k+\beta_k I)^{-1}\Jstar e_k$ переходит в линейную
-рекурренцию по~$e_k$, доминантный собственный вектор которой~--- общая
-ось всех секущих. Скорость сжатия~$r_k$ к нулю определяется зазором
-между ведущим собственным значением и остальными в линеаризации
-итерации, а величина соответствующей константы~$\omega_{r}$~--- параметрами
-$\mu, L_1, \eta, \kappa(\Jstar)$. Подробное обоснование~\ref{as:secant-rk}
-требует Powell-стилевого аргумента сходимости квазиньютоновских методов
-с регуляризацией, аналогичного~\cite[\S~5--6]{powell1971}, и выходит за
-рамки настоящего тезиса.
-
-\paragraph{Эмпирическая верификация.}
-В численных экспериментах раздела~\ref{sec:viji:numerics}
-\textup{(}10~независимых seed'ов, $n=30$, $\kappa=20$\textup{)}
-наблюдаемая величина $\Norm{r_k}/(\Norm{e_k}\Norm{s_k})$ остаётся
-ограниченной по всем итерациям и в среднем близка к $1{,}5\div 3$ в
-терминальной фазе, что подтверждает~\ref{as:secant-rk} с
-$\omega_{r}\sim 3$ для рассмотренного класса задач.
-
-\subsection{Закрытие \texorpdfstring{\ref{as:dm-rate}}{as:dm-rate}}
-\label{sec:app-aln-l1:dm-close}
-
-\begin{theorem}[Обоснование~\ref{as:dm-rate}]
-\label{thm:app-aln-l1:dm-discharge}
-В предположениях~\ref{as:sm}, теоремы~\ref{thm:bd} с адаптивной глубиной
-SP-Broyden \textup{(}порог $\mathrm{cond}(G_p)\le\tau$\textup{)},
-Q-линейной локальной сходимости VIJI \textup{(}\cite[Theorem~3.4]{Agafonov2024VIJI}\textup{)}
-и условия~\ref{as:secant-rk} выполнено~\ref{as:dm-rate} в
-форме~\eqref{eq:dm-rate} с
-\begin{equation}
-\zeta_{\mathrm{DM}} \;=\; K_{<} \;+\; M_{0}\,\omega_{r}
-\;=\; 2\,L_1\,\sqrt{(p+1)\,\tau} \;+\; M_{0}\,\omega_{r}.
-\label{eq:app-aln-l1:zeta-DM}
-\end{equation}
+В правой части $\bar e_k = \max_{0\le j\le p+1}\Norm{v_{k-j}-x^{*}}$~---
+ведущая прошлая ошибка по окну SP-Broyden глубины $p+1$
+\textup{(}связь с условием~\eqref{eq:cond14} см.~ниже,
+п.~<<Связь с условием~\eqref{eq:cond14}>>\textup{)}.
 \end{theorem}
 
 \begin{proof}
-По~\eqref{eq:app-aln-l1:Ek-sk-decomp},
-\eqref{eq:app-aln-l1:Esk-par},~\eqref{eq:app-aln-l1:Esk-perp},
-условию~\ref{as:secant-rk} и тривиальной мажоранте $\Norm{e_k} \le \bar e_k$:
-\begin{align*}
-\Norm{E_k\,s_k}
-&\le \Norm{E_k\,\Pi_k^{<} s_k} + \Norm{E_k\,r_k}
-\le K_{<}\,\bar e_k\,\Norm{s_k} + M_{0}\,\omega_{r}\,\Norm{e_k}\,\Norm{s_k}\\
-&\le K_{<}\,\bar e_k\,\Norm{s_k} + M_{0}\,\omega_{r}\,\bar e_k\,\Norm{s_k}
-\;=\; (K_{<} + M_{0}\,\omega_{r})\,\bar e_k\,\Norm{s_k}
-\;=\; \zeta_{\mathrm{DM}}\,\bar e_k\,\Norm{s_k},
-\end{align*}
-что есть~\eqref{eq:dm-rate}.
+Оценим в~\eqref{eq:app-aln-l1:residual} каждое из трёх слагаемых;
+все $O(1)$-константы зависят от $\mu,L_1,\eta,M_0,c_d,\omega_r$.
+
+\emph{Регуляризатор $\beta$.} Правило VIJI: $\beta_k = \eta L_1\Norm{s_{k-1}}$,
+$\beta_{k+1} = \eta L_1\Norm{s_k}$, оба $\ge 0$, поэтому
+$|\beta_k - \theta\beta_{k+1}| \le \eta L_1\max(\Norm{s_{k-1}},\Norm{s_k})$.
+По~\eqref{eq:app-aln-l1:basic-bounds} и монотонности $\{\Norm{e_j}\}$:
+$|\beta_k-\theta\beta_{k+1}| = O(\Norm{e_{k-1}})$, $\Norm{Z_k s_k} =
+O(\Norm{e_k})$. Применением~\ref{as:step-ndg} ($\Norm{e_k}\le c_d^{-1}\Norm{d_{k+1}}$)
+и $\Norm{e_{k-1}}\le\bar e_k$:
+\begin{equation}
+\Norm{(\beta_k-\theta\beta_{k+1})Z_k s_k} \;=\; O(\bar e_k\Norm{d_{k+1}}).
+\label{eq:app-aln-l1:residual-beta}
+\end{equation}
+
+\emph{Секущая разность $B_{k+1}-B_k$.} Из секущего условия и интегральной
+формулы $(B_{k+1}-B_k)s_k = y_k - B_k\,s_k = -E_k\,s_k + (J_k^{(s)} - \Jstar)s_k$.
+По лемме~\ref{lem:app-aln-l1:dm-rate} первое слагаемое~$O(\bar e_k\Norm{s_k})$,
+по~\eqref{eq:app-aln-l1:Jbar} второе~$O(\Norm{e_k}\Norm{s_k}) =
+O(\bar e_k\Norm{s_k})$. Через~\ref{as:step-ndg}
+\begin{equation}
+\Norm{Z_k(B_{k+1}-B_k)s_k} \;=\; O(\bar e_k\Norm{d_{k+1}}).
+\label{eq:app-aln-l1:residual-B}
+\end{equation}
+
+\emph{Якобиан $r_k^{(F)}$.} По лемме~\ref{lem:app-aln-l1:identity}
+$\Norm{Z_k r_k^{(F)}} = O(\Norm{s_k}^{2}) = O(\Norm{e_k}^{2})$, через
+\ref{as:step-ndg}
+\begin{equation}
+\Norm{(1-\theta)Z_k r_k^{(F)}} \;=\; O(\Norm{d_{k+1}}^{2}).
+\label{eq:app-aln-l1:residual-F}
+\end{equation}
+
+Складывая~\eqref{eq:app-aln-l1:residual-beta}--\eqref{eq:app-aln-l1:residual-F}
+и применяя неравенство треугольника к~\eqref{eq:app-aln-l1:residual},
+получаем~\eqref{eq:app-aln-l1:final}.
 \end{proof}
-
-\paragraph{Резюме редукции.}
-Теорема~\ref{thm:app-aln-l1:dm-discharge} сводит
-условие~\ref{as:dm-rate}~--- которое в формулировке является
-количественным аналогом классического условия Дэнниса--Море~--- к одному
-явному структурному условию~\ref{as:secant-rk} о геометрии секущей
-истории. Это условие имеет следующие свойства:
-\begin{enumerate}\itemsep0pt
-  \item \emph{Прозрачный геометрический смысл:} линейная декорреляция
-    текущей секущей относительно прошлых.
-  \item \emph{Прямая эмпирическая проверяемость:} величина
-    $\Norm{r_k}/(\Norm{e_k}\Norm{s_k})$ вычислима по~траектории и
-    наблюдаемо ограничена в численных экспериментах раздела~\ref{sec:viji:numerics}.
-  \item \emph{Согласованность с известной теорией:} для линейного
-    случая $L_1=0$ секущая стабилизируется в инвариантном подпространстве
-    после $\le n$ итераций, в нём $r_k\to 0$ конечно-шагово, и
-    $\omega_{r}=0$. В $L_1$-гладком случае~\ref{as:secant-rk}~---
-    разрешимый Powell-стилевыми методами сюжет о Q-линейной сходимости
-    направлений секущих, единственный неустранённый аналитический шаг.
-  \item \emph{Эквивалентность~\ref{as:dm-rate} конечному ослаблению:}
-    переформулировка~\ref{as:dm-rate} через~\ref{as:secant-rk} не
-    добавляет новых ограничений на задачу или итерационную схему,
-    а лишь делает зависимость от геометрии траектории явной.
-\end{enumerate}
-
-В разделе~\ref{sec:app-aln-l1:remarks}, п.~<<Возможные обобщения>>
-обсуждается, что дробное ослабление~\ref{as:secant-rk} до
-$\Norm{r_k}\le\omega_{r}\Norm{e_k}^{1+\delta}\Norm{s_k}$, $\delta\in(0,1)$,
-ведёт к дробной форме~\ref{as:dm-rate} и сохраняет применимость
-леммы~\ref{lem:alignment} для главной теоремы~\ref{thm:sp-afd} с дробной
-скоростью сходимости. Тем самым строгая линейная форма~\ref{as:secant-rk}
-не критична: достаточно любой положительной степени.
 
 \section{Замечания}
 \label{sec:app-aln-l1:remarks}
 
-\paragraph{Квадратичный случай как частный.}
-При $L_1 = 0$ оператор $F(x) = A(x-x^{*})$ линеен, секущая история стабилизуется
-в активном инвариантном подпространстве, и
-$\zeta_{\mathrm{DM}} = 0$ \textup{(}см.~\ref{rem:dm-rate-status}, п.~1\textup{)}.
-Прямой подстановкой в~\eqref{eq:app-aln-l1:Cab}:
-$C^{(\beta)} = 0$, $C^{(B)} = 0$, $C^{(F)} = 0$, итого $C_a = C_b = 0$~---
-безостаточное выравнивание $d_{k+1} = \theta_{k+1}\,s_k$ при выборе
-$\alpha_k = \theta_{k+1}$. Это согласуется с известной точной идентичностью
-для квазиньютоновских итераций на квадратиках после стабилизации SP-обновления
-в коммутативной алгебре $\mathbb{R}[A]$~\cite[\S 8.2]{dennis1996}.
-
-\paragraph{Зависимость от $M_0$.}
-Константы $C_a, C_b$ зависят от $M_0$ через $M_B, \kappa_B$ и $\mu_B$
-\textup{(}нижняя оценка $B_k + \beta_k I$ при $\beta_k \ge 0$ есть
-$\mu_B = \mu - \Fro{B_k - \Jstar} \ge \mu - M_0$, что требует
-$M_0 < \mu$\textup{)}. Это согласуется с замечанием~\ref{rem:step-ndg-sm}
-главы~4 и встроено в следствие~\ref{cor:sp-in-segment}, гарантирующее
-$M_0 \le \widetilde C_{\mathrm{SP}}$.
-
-\paragraph{Можно ли убрать предположение~\ref{as:dm-rate}?}
-В~разделе~\ref{sec:app-aln-l1:dm-analysis} проведена формальная редукция
-\ref{as:dm-rate} к структурному условию~\ref{as:secant-rk} о линейной
-декорреляции текущей секущей $s_k$ относительно прошлой истории
-$\{s_{k-1},\ldots,s_{k-p-1}\}$; это сводит остающуюся неопределённость к
-одному явному, эмпирически проверяемому неравенству, для которого
-доказательство из~\ref{as:sm}~--- сюжет Powell-стилевого
-аргумента~\cite{powell1971} о сходимости направлений секущих и
-предмет отдельной работы.
-
 \paragraph{Связь с условием~\eqref{eq:cond14}.}
 Оценка~\eqref{eq:app-aln-l1:final} отличается от исходной формы
-леммы~\ref{lem:alignment} тем, что в первом слагаемом стоит
-\emph{прошлая} ошибка $\bar e_k = \Norm{v_{k-p-1} - x^{*}}$ вместо
-текущей $\Norm{v_k - x^{*}}$. Применение в~\S\ref{sec:viji:theorem}
-\textup{(}переход от $\Norm{(B_{k+1}-J_k)s_k}$ к левой
-части~\eqref{eq:cond14}\textup{)} проходит после одного дополнительного
-шага: связки $\bar e_k \le C_e\,\Norm{d_{k+1}}/c_d$ для некоторой
-конечной константы $C_e \ge 1$. Достаточные условия для такой связки:
+леммы~\ref{lem:alignment} тем, что в первом слагаемом стоит \emph{прошлая}
+ошибка $\bar e_k = \Norm{v_{k-p-1}-x^{*}}$ вместо текущей
+$\Norm{v_k-x^{*}}$. Применение в~\S\ref{sec:viji:theorem}~--- переход от
+$\Norm{(B_{k+1}-J_k)s_k}$ к левой части~\eqref{eq:cond14}~--- проходит
+после одного дополнительного шага: связки $\bar e_k = O(\Norm{d_{k+1}})$.
+Достаточные условия:
 \begin{enumerate}\itemsep0pt
   \item \emph{Двусторонняя Q-линейная сходимость} в терминальной фазе:
-    $\underline\rho_v\,\Norm{e_{k-1}} \le \Norm{e_k} \le \rho_v\,\Norm{e_{k-1}}$
-    с $\underline\rho_v > 0$, откуда $\Norm{e_{k-p-1}} \le
-    \underline\rho_v^{-(p+1)}\Norm{e_k}$ и далее $\bar e_k \le
-    \underline\rho_v^{-(p+1)}\Norm{d_{k+1}}/c_d$ через~\ref{as:step-ndg}.
-  \item \emph{Окно-локальная невырожденность шага}: $\Norm{e_{k-j}}
-    \le c_d^{-1}\Norm{d_{k+1-j+1}}$ для $j = 0, \ldots, p+1$ \textup{(}применение
-    \ref{as:step-ndg} ко всем недавним итерациям\textup{)} плюс ограниченность
-    отношений $\Norm{d_{k-q+1}}/\Norm{d_{k+1}}$ на окне~--- эквивалентно
+    $\underline\rho_v\Norm{e_{k-1}}\le\Norm{e_k}\le\rho_v\Norm{e_{k-1}}$
+    с $\underline\rho_v > 0$, откуда $\bar e_k = \Norm{e_{k-p-1}}
+    \le \underline\rho_v^{-(p+1)}\Norm{e_k} = O(\Norm{e_k}) =
+    O(\Norm{d_{k+1}})$ через~\ref{as:step-ndg}. Это
+    \emph{дополнительное} условие на динамику, более сильное, чем
+    стандартная Q-линейная оценка~\cite[Theorem~3.4]{Agafonov2024VIJI},
+    и в работе как ассумпция не вводится.
+  \item \emph{Окно-локальная невырожденность шага}: применение
+    \ref{as:step-ndg} ко всем недавним итерациям окна плюс ограниченность
+    отношений $\Norm{d_{k-q+1}}/\Norm{d_{k+1}}$~--- эквивалентно
     предыдущему пункту.
 \end{enumerate}
 Без любого из этих допущений лемма~\ref{lem:alignment} даёт оценку с
-$\bar e_k$ вместо $\Norm{v_k-x^{*}}$, и закрытие
-условия~\eqref{eq:cond14} в~\S\ref{sec:viji:theorem} требует лишь, чтобы
-$\bar e_k \to 0$ \textup{(}что обеспечено самой Q-линейной сходимостью\textup{)};
-переход к квадратичной по $\Norm{d_{k+1}}$ форме через~\ref{as:step-ndg}
-требует двусторонней оценки. Все константы $C_a, C_b$ по-прежнему зависят
-только от $\mu, L_1, \eta, M_0, c_d, \zeta_{\mathrm{DM}}$, но~не от~$k$ или
-текущего сегмента.
-
-\paragraph{Возможные обобщения.}
-\begin{itemize}\itemsep0pt
-  \item \emph{Без~\ref{as:step-ndg}.}
-    При нарушении~\ref{as:step-ndg} \textup{(}в окрестности супершагов
-    или вблизи фиксированных точек\textup{)} в~\eqref{eq:app-aln-l1:final}
-    останутся лишь $C_a^{\prime}\,\bar e_k\,\Norm{s_k} + C_b^{\prime}\Norm{s_k}^{2}$
-    \textup{(}без перевода в $\Norm{d_{k+1}}$\textup{)}, что~--- более слабая
-    форма, но достаточная для доказательства условия~\eqref{eq:cond14}
-    в~\emph{агрегированной} форме на сегменте \textup{(}усреднение по~$k$\textup{)}.
-  \item \emph{Несимметричный случай.} Если $A = \Jstar$ несимметричен,
-    доказательство проходит без изменений: в нём явно использовано лишь
-    $\mu I \preceq \tfrac12(B_k + \beta_k I + (\cdot)^{\top})$
-    \textup{(}нижняя оценка эрмитовой части\textup{)} и операторные оценки.
-  \item \emph{Ослабление~\ref{as:dm-rate}.}
-    Замена~\eqref{eq:dm-rate} на $\Norm{(B_k - \Jstar)s_k} \le \zeta_{\mathrm{DM}}\,\bar e_k^{1+\delta}\Norm{s_k}$
-    при $\delta \in (0, 1)$ ведёт к оценке вида
-    $C_a^{\prime}\,\bar e_k^{1+\delta}\Norm{d_{k+1}} + C_b\Norm{d_{k+1}}^{2}$,
-    которая обеспечивает~\eqref{eq:cond14} с дробной степенью \textup{(}при тех
-    же оговорках о двусторонней Q-линейности из параграфа «Связь с условием~\eqref{eq:cond14}»\textup{)}.
-    Это показывает, что точная скорость Дэнниса--Море не критична: достаточно
-    любой положительной степени превышения над линейной.
-\end{itemize}
-$\square$
+$\bar e_k$ вместо $\Norm{v_k-x^{*}}$, и закрытие~\eqref{eq:cond14}
+требует лишь $\bar e_k\to 0$ \textup{(}обеспечено Q-линейной сходимостью\textup{)};
+переход к квадратичной по $\Norm{d_{k+1}}$ форме требует двусторонней
+оценки.
