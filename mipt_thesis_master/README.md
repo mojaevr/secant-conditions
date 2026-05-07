@@ -52,14 +52,13 @@ mipt_thesis_master/
 │   ├── ch1_jacobian.tex           — гл. 1: общая формула обновления якобиана
 │   ├── ch2_sp_broyden.tex         — гл. 2: SP-Broyden, теоремы, эксперименты, L-SP
 │   ├── ch3_symmetric.tex          — гл. 3: SS-SR1, scaling, сравнение QN-методов
-│   ├── ch4_sp_afd.tex             — гл. 4: VIJI-Restarted и SP-AFD
+│   ├── ch4_afd.tex                — гл. 4: VIJI-Restarted и AFD
 │   ├── conclusion.tex             — заключение
 │   ├── reproducibility.tex        — программная реализация и воспроизводимость
 │   └── bibliography.tex           — ручной \begin{thebibliography} (48 записей)
 │
 └── appendix/
-    ├── app_alignment.tex          — Лемма 4.3: выравнивание VIJI-итераций
-    └── app_sp_afd_proof.tex       — Теорема 4.8: полное доказательство SP-AFD
+    └── app_afd_proof.tex          — полное доказательство теоремы о сходимости AFD
 ```
 
 В корне репозитория (`../`) лежат вычислительные ноутбуки, диагностические

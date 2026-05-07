@@ -17,7 +17,7 @@
                    (единое обозначение во всех главах; макрос \texttt{\textbackslash Jstar})
   \item[$J_k$]     локальный якобиан в центре сегмента VIJI-Restarted:
                    $J_k = \nabla F(v_k)$ (только глава~4 и
-                   приложение~\ref{app:sp-afd-proof}); следует отличать от $J^*$
+                   приложение~\ref{app:afd-proof}); следует отличать от $J^*$
   \item[$x^*$]     решение: $F(x^*)=0$ или решение VI
 \end{description}
 
@@ -56,7 +56,7 @@
                         в главе~\ref{ch:jacobian}
   \item[$p$]           глубина сохраняемых \emph{прошлых} секущих условий
                         в SP-Broyden и его вариантах (главы~\ref{ch:sp-broyden-theory},
-                        \ref{ch:symmetric}, \ref{ch:sp-broyden-viji}); число
+                        \ref{ch:symmetric}, \ref{ch:afd}); число
                         столбцов окна на одну больше, чем $p$ ---
                         $S_p \in \RR^{n\times (p+1)}$ за счёт включения
                         текущей секущей $s_k$
@@ -95,14 +95,12 @@
   \item[$\rhok$]         гарантированный коэффициент сжатия на шаге $k$
   \item[$M_0$]           равномерная оценка $\Fro{B_k - J^*}$
                           в анализе SP-Broyden внутри сегмента
-  \item[$C_d$]           константа связи $\|d_k\| \ge C_d\,\|v_k - x^*\|$
-                          (явное предположение Proposition~4.4)
-  \item[$\varepsilon^*$] радиус локального режима,
-                          в котором гарантируется оптимальная скорость
+  \item[$C_d, c_d$]      константы связи $\|d_k\| \ge c_d\,\|v_k - x^*\|$
+                          (предположение~\ref{as:step-ndg})
   \item[$\delta_k$]      управляемая ошибка якобиана:
                           $\|(B_k - J_k)(x_k - v_k)\| \le \delta_k\,\|x_k - v_k\|$
   \item[$r^*$]           число конечно-разностных поправок
-                          (refinement-шагов) в SP-AFD
+                          (refinement-шагов) в AFD
 \end{description}
 
 \section*{Соглашения}
