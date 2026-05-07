@@ -7,13 +7,6 @@
 Физтех-школа прикладной математики и информатики МФТИ, кафедра проблем
 передачи информации и анализа данных.
 
-Базовая схема VIJI-Restarted взята из соавторской публикации
-Agafonov, Ostroukhov, Mozhaev et al., NeurIPS 2024
-([arXiv:2405.15990](https://arxiv.org/abs/2405.15990)); в той работе
-использовалось иное приближение якобиана. Настоящая диссертация
-переносит схему VIJI-Restarted на SP-Broyden и приводит соответствующий
-теоретический анализ и численные эксперименты.
-
 
 ## Сборка
 
@@ -43,22 +36,15 @@ mipt_thesis_master/
 ├── check_static.py                — статическая сверка cite/ref/label
 ├── README.md                      — этот файл
 │
-├── sections/
-│   ├── abstract_ru.tex            — аннотация (рус)
-│   ├── abstract_en.tex            — abstract (en)
-│   ├── notation.tex               — список обозначений
-│   ├── introduction.tex           — введение (актуальность, цель, новизна)
-│   ├── literature_review.tex      — обзор литературы
-│   ├── ch1_jacobian.tex           — гл. 1: общая формула обновления якобиана
-│   ├── ch2_sp_broyden.tex         — гл. 2: SP-Broyden, теоремы, эксперименты, L-SP
-│   ├── ch3_symmetric.tex          — гл. 3: SS-SR1, scaling, сравнение QN-методов
-│   ├── ch4_afd.tex                — гл. 4: VIJI-Restarted и AFD
-│   ├── conclusion.tex             — заключение
-│   ├── reproducibility.tex        — программная реализация и воспроизводимость
-│   └── bibliography.tex           — ручной \begin{thebibliography} (48 записей)
-│
-└── appendix/
-    └── app_afd_proof.tex          — полное доказательство теоремы о сходимости AFD
+└── sections/
+    ├── abstract_ru.tex            — аннотация
+    ├── notation.tex               — список обозначений
+    ├── introduction.tex           — введение (актуальность, цель, новизна)
+    ├── ch1_jacobian.tex           — гл. 1: общая формула обновления якобиана
+    ├── ch2_sp_broyden.tex         — гл. 2: SP-Broyden, теоремы, эксперименты, L-SP
+    ├── ch3_symmetric.tex          — гл. 3: SS-U, SS-SR1, SS-PSB, статистика
+    ├── conclusion.tex             — заключение
+    └── bibliography.tex           — ручной \begin{thebibliography}
 ```
 
 В корне репозитория (`../`) лежат вычислительные ноутбуки, диагностические
@@ -69,11 +55,9 @@ mipt_thesis_master/
 
 | Глава / раздел | Ноутбук | Скрипт диагностики | Сырые данные | Картинки |
 |---|---|---|---|---|
-| гл. 2 «SP-Broyden»: эксперименты сходимости | `tezisy.ipynb` | `diag_sp_broyden.py` | — | `fig_sp_broyden_conv.pdf`, `fig_sp_broyden_jacerr.pdf`, `fig_sp_broyden_pvar.pdf`, `fig_sp_broyden_cond.pdf` |
-| гл. 2, раздел `sec:highdim` (L-SP-Broyden, $n\le 10^4$) | — | `diag_highdim.py` | `highdim_results.npz` | `fig_highdim_conv.pdf`, `fig_highdim_summary.pdf`, `fig_highdim_pvar.pdf` |
-| гл. 3, статистика SS-конструкции в $n\in\{10,20,50\}$ — пара SR1/SS-SR1 и пара PSB/SS-PSB, по 50 случайных стартов; convergence-фигуры для обеих пар + накопленная невязка прошлых секущих $\Vert B_k S_p - Y_p\Vert_F$ для PSB-пары (тh. ss_props п. 3) | — | `diag_ndim_stat.py` | `ndim_stat.npz`, `ndim_stat_summary.txt` | `fig_ndim_stat_sr1.pdf`, `fig_ndim_stat_psb.pdf`, `fig_ndim_stat_rpast_psb.pdf` |
-| гл. 4 «VIJI-Restarted»: основные эксперименты | `pics.ipynb` | `run_seeds.py`, `diag_sp_afd.py` | `results.npz` | `fig_viji_conv.pdf`, `fig_viji_seeds.pdf`, `fig_sp_afd_gap_T.pdf`, `fig_sp_afd_problems.pdf`, `fig_sp_afd_cond14.pdf`, `fig_sp_afd_rstar.pdf` |
-| гл. 4, baseline Anderson($m,\beta$) | — | `diag_anderson.py` | `anderson_baseline.npz` | `fig_anderson_baseline.pdf`, `fig_anderson_summary.pdf` |
+| гл. 2 «SP-Broyden»: эволюция $\|B_k - J(x_k)\|_F$ | `tezisy.ipynb` | `diag_jacerr_stat.py` | — | `fig_sp_broyden_jacerr.pdf` |
+| гл. 2, раздел `sec:highdim` (L-SP-Broyden, $n\le 10^4$) | — | `diag_highdim_stat.py` | `highdim_results.npz` | `fig_highdim_conv.pdf`, `fig_highdim_summary.pdf`, `fig_highdim_pvar.pdf` |
+| гл. 3, статистика SS-конструкции в $n\in\{10,20,50\}$ — пара SR1/SS-SR1 и пара PSB/SS-PSB, по 50 случайных стартов; convergence-фигуры + накопленная невязка прошлых секущих $\Vert B_k S_p - Y_p\Vert_F$ для PSB-пары (теорема `thm:ss_props` п. 3) | — | `diag_ndim_stat.py` | `ndim_stat.npz`, `ndim_stat_summary.txt` | `fig_ndim_stat_sr1.pdf`, `fig_ndim_stat_psb.pdf`, `fig_ndim_stat_rpast_psb.pdf` |
 
 Каждый PDF-плот лежит в `mipt_thesis_master/` (рядом с `.tex`-исходниками)
 для прямой подстановки через `\includegraphics`. Сырые `*.npz` — в корне
@@ -82,25 +66,21 @@ mipt_thesis_master/
 
 ## Воспроизводимость
 
-Подробности — в `sections/reproducibility.tex` (включается в финальный PDF).
-Краткий справочник:
-
 - Python 3.10, NumPy 1.26, SciPy 1.11, Matplotlib 3.8 (TeX Live 2025+).
 - Seed'ы — через `numpy.random.default_rng(seed)` (генератор PCG64),
   глобальный `np.random.seed` не используется.
-- Единый критерий остановки: $\varepsilon_{\mathrm{tol}}=10^{-10}$,
-  норма зависит от типа задачи (см. таблицу в `reproducibility.tex`).
-- 10 seed'ов на конфигурацию для VIJI-Restarted (`run_seeds.py`),
-  10–50 случайных направлений на точку для радиальных диагностик в гл. 3
-  (`diag_table31_ci.py`, `diag_ss_sr1_scaling.py`).
+- Единый критерий остановки: $\varepsilon_{\mathrm{tol}}=10^{-10}$
+  (норма зависит от типа задачи).
+- Для статистических диагностик (гл. 3, paired-design) — 50 случайных
+  направлений на точку с фиксированным seed.
 
 Запуск любого диагностического скрипта из корня репозитория:
 
 ```sh
 cd ..
-python diag_sp_broyden.py        # ⇒ fig_sp_broyden_*.pdf в mipt_thesis_master/
-python diag_highdim.py           # ⇒ fig_highdim_*.pdf, highdim_results.npz
-# и т. п.
+python diag_jacerr_stat.py       # ⇒ fig_sp_broyden_jacerr.pdf в mipt_thesis_master/
+python diag_highdim_stat.py      # ⇒ fig_highdim_*.pdf, highdim_results.npz
+python diag_ndim_stat.py         # ⇒ fig_ndim_stat_*.pdf, ndim_stat.npz
 ```
 
 
@@ -110,7 +90,7 @@ python diag_highdim.py           # ⇒ fig_highdim_*.pdf, highdim_results.npz
 `\cite{...}` ↔ `\bibitem{...}`, `\ref{...}/\eqref{...}` ↔ `\label{...}`,
 ловит дубликаты `\label`. На текущий момент:
 
-- 48/48 `\cite` ↔ `\bibitem` (с учётом `\cite[opt]{key}`),
+- все `\cite` имеют `\bibitem` (с учётом `\cite[opt]{key}`),
 - 0 потерянных `\ref`/`\eqref`,
 - 0 дубликатов `\label`.
 
