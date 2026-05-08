@@ -66,7 +66,9 @@
 \addto\captionsrussian{\renewcommand{\contentsname}{Содержание}}
 \addto\captionsrussian{\renewcommand{\listfigurename}{Список иллюстраций}}
 \addto\captionsrussian{\renewcommand{\listtablename}{Список таблиц}}
-\addto\captionsrussian{\renewcommand{\bibname}{Литература}}
+% Положение о ВКР МФТИ, Прил. 1 §3: структурный элемент называется
+% «Список использованных источников» (не «Литература»).
+\addto\captionsrussian{\renewcommand{\bibname}{Список использованных источников}}
 \addto\captionsrussian{\renewcommand{\indexname}{Index}}
 \addto\captionsrussian{\renewcommand{\figurename}{Рис.{}}}
 \addto\captionsrussian{\renewcommand{\tablename}{Таблица}}
@@ -134,9 +136,14 @@
                     \fi}
 
 
+% ГОСТ 7.32-2017 (на который ссылается Положение о ВКР, Прил. 2 §1):
+% «Заголовки структурных элементов отчета и заголовки разделов основной
+% части отчета следует располагать в середине строки». Поэтому
+% \raggedright заменён на \centering. Размеры шрифта (\huge/\Huge)
+% сохранены для визуальной иерархии: глава крупнее, чем параграфы.
 \def\@makechapterhead#1{%
   \vspace*{50\p@}%
-  {\parindent \z@ \raggedright \normalfont
+  {\parindent \z@ \centering \normalfont
     \ifnum \c@secnumdepth >\m@ne
       \if@mainmatter
         \huge\bfseries\boldmath \@chapapp\space \thechapter
@@ -150,7 +157,7 @@
   }}
 \def\@makeschapterhead#1{%
   \vspace*{50\p@}%
-  {\parindent \z@ \raggedright
+  {\parindent \z@ \centering
     \normalfont
     \interlinepenalty\@M
     \Huge \bfseries\boldmath  #1\par\nobreak
@@ -158,14 +165,22 @@
   }}
 
 
+% Положение о ВКР МФТИ, Прил. 2 §4: «Заголовки параграфов (пунктов)
+% печатаются по центру строчными буквами (кроме первой прописной)».
+% Поэтому форматтер последнего аргумента \@startsection задаёт \centering
+% (не \raggedright, как было раньше). Регистр («строчные буквы кроме
+% первой прописной») обеспечивается стилем самих заголовков в .tex,
+% LaTeX-команда не делает преобразование. Подзаголовки --- такое же
+% выравнивание; sf-курсив у subsection убран как не предписанный
+% Положением и нестандартный для научного текста.
 \renewcommand\section{\@startsection {section}{1}{\z@}%
                                    {-3.5ex \@plus -1ex \@minus -.2ex}%
                                    {2.3ex \@plus.2ex}%
-                             {\normalfont\Large\raggedright}}
+                             {\normalfont\large\centering}}
 \renewcommand\subsection{\@startsection{subsection}{2}{\z@}%
                                      {-3.25ex\@plus -1ex \@minus -.2ex}%
                                      {1.5ex \@plus .2ex}%
-                             {\normalfont\Large\sffamily\itshape\raggedright}}
+                             {\normalfont\large\centering}}
 %%%%%%%% Captions %%%%%%%%%%%%%%%%%%%%%%%%%%
 \long\def\@makecaption#1#2{%
   \vskip\abovecaptionskip
@@ -216,49 +231,66 @@
     \clearpage \mbox{} \clearpage
 }
 
+% Титульный лист по образцу Прил. 6 Положения о ВКР МФТИ.
+% Отличия от буквы Положения 2019 г.:
+%   * Имя вуза --- «национальный исследовательский университет» (актуальное
+%     официальное наименование МФТИ), а не «государственный университет»
+%     (название из Положения 2019 г., устарело после переименования).
+%   * Город --- «Долгопрудный» (фактический адрес), а не «Москва»
+%     (как написано в образце Прил. 6).
+% На финальной защите титульный всё равно генерируется в личном кабинете
+% обучающегося (Положение, п. 6.2.2.1) с актуальным наименованием вуза;
+% LaTeX-титульный нужен для предзащиты, репозитория и работы над текстом.
 \renewcommand{\titlepage}{%
     \pagestyle{empty}
     \begin{center}
-        {\bf Министерство образования и науки Российской Федерации \\
-        Московский физико-технический институт (национальный 
-        исследовательский университет) \\ }
-        \vspace{1cm}
+        {\bfseries
+        Федеральное государственное автономное \\
+        образовательное учреждение высшего образования \\
+        <<Московский физико-технический институт \\
+        (национальный исследовательский университет)>>}
 
+        \vspace{1.2cm}
 
         \mtfacultytext \\
-        \mtdepartmenttext \\
-
-        \vspace{3em}
-
-        Выпускная квалификационная работа магистра по направлению 09.04.01
-        <<Информатика и вычислительная техника >>
+        \mtdepartmenttext
     \end{center}
+
+    \vspace{1.5em}
+
+    \noindent Направление подготовки: 09.04.01 Информатика и вычислительная техника
 
     \begin{center}
         \vspace{\fill}
         \singlespacing
 
-        \LARGE \mttitletext{}
+        \LARGE\bfseries \MakeUppercase{\mttitletext}
+
+        \vspace{1.5em}
+
+        {\normalfont\normalsize (магистерская диссертация)}
 
         \vspace{\fill}
     \end{center}
 
-
     \begin{flushright}
-        Студент \mtgroupnumtext{} группы \\
-        \mtauthortext{} \\
-        \vspace{2em}
-        Научный руководитель \\
-        \mtsupervisortext{} \\
+        \begin{tabular}{@{}l@{\hspace{1em}}l@{}}
+        Студент: & \mtauthortext{} \\
+                 & группа \mtgroupnumtext{} \\[0.6em]
+                 & \rule{5cm}{0.4pt} \\
+                 & \footnotesize (подпись студента) \\[1.5em]
+        Научный руководитель: & \mtsupervisortext{} \\[0.6em]
+                 & \rule{5cm}{0.4pt} \\
+                 & \footnotesize (подпись научного руководителя) \\
+        \end{tabular}
     \end{flushright}
 
-    \vspace{7em}
+    \vspace{3em}
 
     \begin{center}
         Долгопрудный \\
         \the\year{}
     \end{center}
-
 }
 
 \newcommand{\titlecontents}{

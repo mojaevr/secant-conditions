@@ -1,8 +1,10 @@
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{mipt-thesis-biblatex}[2026/04/21 Stub: plain thebibliography is used, biblatex/biber disabled]
+\ProvidesPackage{mipt-thesis-biblatex}[2026/05/09 Stub: bibtex with gost style]
 
-% main.tex использует ручное окружение \begin{thebibliography}...\end{thebibliography},
-% поэтому biblatex и biber здесь не нужны. Оставляем только \printbib для совместимости.
+% Список использованных источников оформляется через bibtex со стилем
+% ugost2003s (пакет gost; см. sections/bibliography.tex и
+% sections/references.bib). Стиль соответствует требованиям ГОСТ 7.1-2003
+% (Положение о ВКР МФТИ, Прил. 1 §3). biblatex/biber не используются.
 
 \newcommand{\printbib}{%
     \addcontentsline{toc}{chapter}{\bibname}%
