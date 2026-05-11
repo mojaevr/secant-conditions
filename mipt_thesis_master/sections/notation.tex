@@ -31,7 +31,7 @@
                     (накопление: $\widehat{B}_k = B_k$; пересборка:
                     $\widehat{B}_k = \widetilde{B}$, обычно $I$)
   \item[$\widetilde{B}$] опорная матрица~--- параметр алгоритма
-                    SP-Broyden, не зависящий от $k$;
+                    мультисекущего Бройдена, не зависящий от $k$;
                     к ней производится сброс при пересборке
   \item[$\Delk$]    изменение матрицы: $\Delk = B_{k+1} - \widehat{B}_k$
   \item[$S_m,\, Y_m,\, V_m$]
@@ -42,8 +42,8 @@
   \item[$E_k$]      ошибка аппроксимации якобиана: $E_k = B_k - J^*$
 \end{description}
 
-\section*{SP-Broyden и SS-U}
-\addcontentsline{toc}{section}{SP-Broyden и SS-U}
+\section*{Мультисекущий Бройден и SS-U}
+\addcontentsline{toc}{section}{Мультисекущий Бройден и SS-U}
 
 \begin{description}[leftmargin=5.5em,labelwidth=5em,labelindent=0pt,font=\normalfont]
   \item[$m$]           ранг мультисекущего обновления в общей формуле
@@ -51,7 +51,8 @@
                         $B_{k+1} S_m = Y_m$); используется только
                         в главе~\ref{ch:jacobian}
   \item[$p$]           глубина сохраняемых \emph{прошлых} секущих условий
-                        в SP-Broyden и его вариантах (главы~\ref{ch:sp-broyden-theory},
+                        в мультисекущем Бройдене и его вариантах
+                        (главы~\ref{ch:sp-broyden-theory},
                         \ref{ch:symmetric}); число столбцов окна на одну
                         больше, чем $p$ --- $S_p \in \RR^{n\times (p+1)}$
                         за счёт включения текущей секущей $s_k$
@@ -59,13 +60,9 @@
                         $S_p = [s_k\mid s_{k-1}\mid\cdots\mid s_{k-p}]
                         \in \RR^{n\times(p+1)}$
   \item[$G_p$]         грамиан окна: $G_p = S_p^\top S_p$
-  \item[$v_k^*$]       оптимальный SP-вектор:
-                        $v_k^* = S_p\,G_p^{-1}\,e_1$
   \item[$\Pi_k$]       ортогональный проектор на $\col(S_p)$:
                         $\Pi_k = S_p\,G_p^{-1}\,S_p^\top$;
                         $\Pi_k^{\perp} = I - \Pi_k$
-  \item[$\tau$]        порог числа обусловленности грамиана
-                        (адаптивный выбор глубины $p$)
   \item[$u_k^*$]       ведущий собственный вектор коррекции SS-U
                         (в $s_k^{\perp}$)
   \item[$\sigma_k^*$]  коэффициент ранг-1 коррекции SS-U
@@ -85,6 +82,6 @@
         ($\Fro{\cdot}$), все нормы векторов~--- евклидовы ($\|\cdot\|$).
   \item Константы обозначаются прописными латинскими буквами
         ($L,\, C_d$); параметры алгоритма~---
-        строчными греческими ($\tau,\, \bar{\rho}$);
+        строчными греческими ($\bar{\rho}$);
         индексы $k$ указывают итерационную зависимость.
 \end{itemize}

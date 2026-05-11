@@ -2,9 +2,9 @@
 diag_highdim_stat.py — статистически корректная замена fig:highdim_conv.
 
 Задача: Broyden Banded (MGH #31) при n ∈ {10^3, 10^4}.
-Цель: показать (i) сходимость limited-memory L-SP-Broyden при m ∈ {2,5,10,20},
-(ii) приближение к dense SP-Broyden-SM при m ↑ (только n=10^3, dense невозможен
-при n=10^4).
+Цель: показать (i) сходимость limited-memory L-PB при m ∈ {2,5,10,20},
+(ii) приближение к плотному Projected Broyden-SM при m ↑ (только n=10^4,
+плотный недоступен при n=10^5).
 
 10 случайных стартов: x_0 = -0.1·1 + 0.05·u, u ~ N(0, I/n)/||u||.
 Все методы — с глобализацией Армихо (Алгоритм 2). Медиана + IQR по стартам.
@@ -48,7 +48,7 @@ def main():
         m_colors = {m: cmap(i / max(1, len(M_VALUES) - 1))
                     for i, m in enumerate(M_VALUES)}
 
-        # --- L-SP-Broyden, разные m ---
+        # --- L-PB, разные m ---
         for m in M_VALUES:
             trajs = []
             for x0 in starts:
@@ -69,11 +69,11 @@ def main():
             color = m_colors[m]
             ax.fill_between(ks[sl], q25[sl], q75[sl], color=color, alpha=0.15, lw=0)
             ax.semilogy(ks[sl], med[sl], color=color, lw=1.7,
-                        label=fr"L-SP-Broyden, $m={m}$")
+                        label=fr"L-PB, $m={m}$")
             print(f"  n={n}, m={m}: median iters = "
                   f"{int(np.median([len(t) for t in trajs]))}")
 
-        # --- dense SP-Broyden-SM (только если dense_seeds>0) ---
+        # --- плотный Projected Broyden-SM (только если dense_seeds>0) ---
         if dense_seeds > 0:
             trajs_dense = []
             for x0 in starts[:dense_seeds]:
@@ -93,7 +93,7 @@ def main():
             ks = np.arange(L)
             ax.fill_between(ks[sl], q25[sl], q75[sl], color="#000000", alpha=0.10, lw=0)
             ax.semilogy(ks[sl], med[sl], color="#000000", lw=2.0, ls=(0, (3, 2)),
-                        label=r"dense SP-Broyden-SM ($p\leq 5$)")
+                        label=r"плотный PB-SM ($p\leq 5$)")
             print(f"  n={n}, dense ({dense_seeds} стартов): median iters = "
                   f"{int(np.median([len(t) for t in trajs_dense]))}")
 
@@ -101,7 +101,7 @@ def main():
         ax.set_ylabel(r"$\|F(x_k)\|_2$")
         title_suffix = ""
         if dense_seeds == 0:
-            title_suffix = "  (dense > 80 ГБ, невозможен)"
+            title_suffix = "  (плотный $>80$ ГБ, невозможен)"
         ax.set_title(fr"Broyden Banded, $n=10^{int(np.log10(n))}$" + title_suffix)
         ax.axhline(1e-10, color="#888", lw=0.6, ls=":")
         ax.grid(True, which="both", ls=":", lw=0.5, alpha=0.6)
