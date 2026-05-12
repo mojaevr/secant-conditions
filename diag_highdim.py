@@ -171,33 +171,35 @@ def broyden_sm(F, x0, maxiter=400, tol=EPS_TOL, globalize=False):
     t0 = time.time()
     peak_floats = float(n * n)
     converged = False
-    for k in range(maxiter):
-        if res[-1] < tol:
-            converged = True
-            break
-        d = -H @ Fx
-        if not np.all(np.isfinite(d)):
-            break
-        d = step_cap(d, x)
-        if globalize:
-            alpha, x_new, Fx_new, ne = armijo_step(F, x, Fx, d)
-            n_eval += ne
-        else:
-            x_new = x + d; Fx_new = F(x_new); n_eval += 1; alpha = 1.0
-            if not np.all(np.isfinite(Fx_new)):
+    with np.errstate(over="ignore", under="ignore", invalid="ignore",
+                     divide="ignore"):
+        for k in range(maxiter):
+            if res[-1] < tol:
+                converged = True
                 break
-        s = x_new - x
-        y = Fx_new - Fx
-        # SM: H_{k+1} = H + (s - H y) s^T H / (s^T H y)
-        Hy = H @ y
-        denom = float(s @ Hy)
-        if abs(denom) < 1e-14 * (norm(s) * norm(Hy) + 1e-30):
-            break
-        sH = s @ H               # 1×n
-        H = H + np.outer((s - Hy) / denom, sH)
-        x, Fx = x_new, Fx_new
-        res.append(float(norm(Fx)))
-        fevals.append(n_eval)
+            d = -H @ Fx
+            if not np.all(np.isfinite(d)):
+                break
+            d = step_cap(d, x)
+            if globalize:
+                alpha, x_new, Fx_new, ne = armijo_step(F, x, Fx, d)
+                n_eval += ne
+            else:
+                x_new = x + d; Fx_new = F(x_new); n_eval += 1; alpha = 1.0
+                if not np.all(np.isfinite(Fx_new)):
+                    break
+            s = x_new - x
+            y = Fx_new - Fx
+            # SM: H_{k+1} = H + (s - H y) s^T H / (s^T H y)
+            Hy = H @ y
+            denom = float(s @ Hy)
+            if abs(denom) < 1e-14 * (norm(s) * norm(Hy) + 1e-30):
+                break
+            sH = s @ H               # 1×n
+            H = H + np.outer((s - Hy) / denom, sH)
+            x, Fx = x_new, Fx_new
+            res.append(float(norm(Fx)))
+            fevals.append(n_eval)
     wall = time.time() - t0
     return dict(method="Broyden-SM", res=np.array(res), fevals=np.array(fevals),
                 wall=wall, peak_floats=peak_floats, converged=converged, iters=len(res) - 1)
@@ -223,49 +225,51 @@ def sp_broyden_sm(F, x0, p_max=5, maxiter=400, tol=EPS_TOL,
     t0 = time.time()
     peak_floats = float(n * n + n * hist_keep)
     converged = False
-    for k in range(maxiter):
-        if res[-1] < tol:
-            converged = True
-            break
-        d = -H @ Fx
-        if not np.all(np.isfinite(d)):
-            break
-        d = step_cap(d, x)
-        if globalize:
-            alpha, x_new, Fx_new, ne = armijo_step(F, x, Fx, d)
-            n_eval += ne
-        else:
-            x_new = x + d; Fx_new = F(x_new); n_eval += 1; alpha = 1.0
-            if not np.all(np.isfinite(Fx_new)):
+    with np.errstate(over="ignore", under="ignore", invalid="ignore",
+                     divide="ignore"):
+        for k in range(maxiter):
+            if res[-1] < tol:
+                converged = True
                 break
-        s = x_new - x
-        y = Fx_new - Fx
-        S_hist.append(s.copy())
-        # SP-вектор v_k = S_p (S_p^T S_p)^{-1} e_1, p = min(p_max, |S_hist|-1)
-        p_eff = min(p_max, len(S_hist) - 1)
-        if p_eff == 0:
-            v = s
-        else:
-            cols = [S_hist[-1 - j] for j in range(p_eff + 1)]
-            Sp = np.column_stack(cols)
-            G = Sp.T @ Sp
-            e1 = np.zeros(p_eff + 1); e1[0] = 1.0
-            try:
-                v = Sp @ solve(G, e1)
-            except np.linalg.LinAlgError:
+            d = -H @ Fx
+            if not np.all(np.isfinite(d)):
+                break
+            d = step_cap(d, x)
+            if globalize:
+                alpha, x_new, Fx_new, ne = armijo_step(F, x, Fx, d)
+                n_eval += ne
+            else:
+                x_new = x + d; Fx_new = F(x_new); n_eval += 1; alpha = 1.0
+                if not np.all(np.isfinite(Fx_new)):
+                    break
+            s = x_new - x
+            y = Fx_new - Fx
+            S_hist.append(s.copy())
+            # SP-вектор v_k = S_p (S_p^T S_p)^{-1} e_1, p = min(p_max, |S_hist|-1)
+            p_eff = min(p_max, len(S_hist) - 1)
+            if p_eff == 0:
                 v = s
-        # SM: H_{k+1} = H + (s - H y) v^T H / (v^T H y)
-        Hy = H @ y
-        denom = float(v @ Hy)
-        if abs(denom) < 1e-14 * (norm(v) * norm(Hy) + 1e-30):
-            break
-        vH = v @ H
-        H = H + np.outer((s - Hy) / denom, vH)
-        x, Fx = x_new, Fx_new
-        res.append(float(norm(Fx)))
-        fevals.append(n_eval)
-        if len(S_hist) > hist_keep:
-            S_hist.pop(0)
+            else:
+                cols = [S_hist[-1 - j] for j in range(p_eff + 1)]
+                Sp = np.column_stack(cols)
+                G = Sp.T @ Sp
+                e1 = np.zeros(p_eff + 1); e1[0] = 1.0
+                try:
+                    v = Sp @ solve(G, e1)
+                except np.linalg.LinAlgError:
+                    v = s
+            # SM: H_{k+1} = H + (s - H y) v^T H / (v^T H y)
+            Hy = H @ y
+            denom = float(v @ Hy)
+            if abs(denom) < 1e-14 * (norm(v) * norm(Hy) + 1e-30):
+                break
+            vH = v @ H
+            H = H + np.outer((s - Hy) / denom, vH)
+            x, Fx = x_new, Fx_new
+            res.append(float(norm(Fx)))
+            fevals.append(n_eval)
+            if len(S_hist) > hist_keep:
+                S_hist.pop(0)
     wall = time.time() - t0
     return dict(method=f"PB-SM(p≤{p_max})", res=np.array(res),
                 fevals=np.array(fevals), wall=wall, peak_floats=peak_floats,
@@ -349,54 +353,56 @@ def lsp_broyden(F, x0, m=10, p_max=None, maxiter=400,
     peak_floats = float(3 * n * m + n * m + 2 * n)
     converged = False
 
-    for k in range(maxiter):
-        if res[-1] < tol:
-            converged = True
-            break
-        Hg, _, _ = apply_H_pairs(Fx, pairs)
-        d = -Hg
-        if not np.all(np.isfinite(d)):
-            break
-        d = step_cap(d, x)
-        if globalize:
-            alpha_a, x_new, Fx_new, ne = armijo_step(F, x, Fx, d)
-            n_eval += ne
-        else:
-            x_new = x + d; Fx_new = F(x_new); n_eval += 1; alpha_a = 1.0
-            if not np.all(np.isfinite(Fx_new)):
+    with np.errstate(over="ignore", under="ignore", invalid="ignore",
+                     divide="ignore"):
+        for k in range(maxiter):
+            if res[-1] < tol:
+                converged = True
                 break
-        s = x_new - x
-        y = Fx_new - Fx
-        # SP-вектор v_k из текущего окна s_hist, p = min(p_max, |окно|)
-        s_hist_full = [pp[0] for pp in pairs] + [s]
-        p_eff = min(p_max, len(s_hist_full) - 1)
-        if p_eff == 0:
-            v = s
-        else:
-            cols = [s_hist_full[-1 - j] for j in range(p_eff + 1)]
-            Sp = np.column_stack(cols)
-            G = Sp.T @ Sp
-            e1 = np.zeros(p_eff + 1); e1[0] = 1.0
-            try:
-                v = Sp @ solve(G, e1)
-            except np.linalg.LinAlgError:
+            Hg, _, _ = apply_H_pairs(Fx, pairs)
+            d = -Hg
+            if not np.all(np.isfinite(d)):
+                break
+            d = step_cap(d, x)
+            if globalize:
+                alpha_a, x_new, Fx_new, ne = armijo_step(F, x, Fx, d)
+                n_eval += ne
+            else:
+                x_new = x + d; Fx_new = F(x_new); n_eval += 1; alpha_a = 1.0
+                if not np.all(np.isfinite(Fx_new)):
+                    break
+            s = x_new - x
+            y = Fx_new - Fx
+            # SP-вектор v_k из текущего окна s_hist, p = min(p_max, |окно|)
+            s_hist_full = [pp[0] for pp in pairs] + [s]
+            p_eff = min(p_max, len(s_hist_full) - 1)
+            if p_eff == 0:
                 v = s
-        # пробное применение H_k y для проверки знаменателя α_k = v^T H_k y
-        Hy_test, _, _ = apply_H_pairs(y, pairs)
-        alpha_test = float(v @ Hy_test)
-        if abs(alpha_test) < 1e-14 * (norm(v) * norm(Hy_test) + 1e-30):
-            # пропускаем апдейт
-            x, Fx = x_new, Fx_new
-            res.append(float(norm(Fx)))
-            fevals.append(n_eval)
-        else:
-            pairs.append((s.copy(), y.copy(), v.copy()))
-            x, Fx = x_new, Fx_new
-            res.append(float(norm(Fx)))
-            fevals.append(n_eval)
-        # тримминг
-        while len(pairs) > m:
-            pairs.pop(0)
+            else:
+                cols = [s_hist_full[-1 - j] for j in range(p_eff + 1)]
+                Sp = np.column_stack(cols)
+                G = Sp.T @ Sp
+                e1 = np.zeros(p_eff + 1); e1[0] = 1.0
+                try:
+                    v = Sp @ solve(G, e1)
+                except np.linalg.LinAlgError:
+                    v = s
+            # пробное применение H_k y для проверки знаменателя α_k = v^T H_k y
+            Hy_test, _, _ = apply_H_pairs(y, pairs)
+            alpha_test = float(v @ Hy_test)
+            if abs(alpha_test) < 1e-14 * (norm(v) * norm(Hy_test) + 1e-30):
+                # пропускаем апдейт
+                x, Fx = x_new, Fx_new
+                res.append(float(norm(Fx)))
+                fevals.append(n_eval)
+            else:
+                pairs.append((s.copy(), y.copy(), v.copy()))
+                x, Fx = x_new, Fx_new
+                res.append(float(norm(Fx)))
+                fevals.append(n_eval)
+            # тримминг
+            while len(pairs) > m:
+                pairs.pop(0)
     wall = time.time() - t0
     label = f"L-PB(m={m},p≤{p_max})" if p_max > 0 else f"L-Broyden(m={m})"
     return dict(method=label, res=np.array(res), fevals=np.array(fevals),
