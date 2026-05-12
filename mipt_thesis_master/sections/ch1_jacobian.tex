@@ -18,13 +18,13 @@
 
 Рассмотрим задачу решения нелинейной системы
 \begin{equation}\label{eq:system}
-  F(x) = 0, \qquad F\colon \mathbb{R}^n \to \mathbb{R}^n.
+  F(x) = 0, \qquad F\colon \RR^n \to \RR^n.
 \end{equation}
 Квазиньютоновские методы строят последовательность $\{x_k\}$ по правилу
 \begin{equation}\label{eq:step}
   x_{k+1} = x_k + d_k, \qquad B_k\,d_k = -F(x_k),
 \end{equation}
-где $B_k \in \mathbb{R}^{n \times n}$~--- аппроксимация якобиана
+где $B_k \in \RR^{n \times n}$~--- аппроксимация якобиана
 $J(x_k) = F'(x_k)$. На каждой итерации $B_k$ пересчитывается через
 обновление, использующее последнюю пару
 \[
@@ -164,8 +164,8 @@ deterioration)~\cite{broyden1973,dennis1996}: при движении вблиз
 
 Пусть заданы $m$ секущих условий $B_{k+1} S_m = Y_m$, где
 \[
-  S_m = [s_{k-m+1}\mid\cdots\mid s_k] \in \mathbb{R}^{n \times m}, \qquad
-  Y_m = [y_{k-m+1}\mid\cdots\mid y_k] \in \mathbb{R}^{n \times m}.
+  S_m = [s_{k-m+1}\mid\cdots\mid s_k] \in \RR^{n \times m}, \qquad
+  Y_m = [y_{k-m+1}\mid\cdots\mid y_k] \in \RR^{n \times m}.
 \]
 Параметр $m$~--- ранг общей мультисекантной формулы, используется только
 в~настоящей главе; начиная с~гл.~\ref{ch:sp-broyden-theory} обозначение
@@ -181,15 +181,15 @@ deterioration)~\cite{broyden1973,dennis1996}: при движении вблиз
     B_{k+1} = \widehat{B}_k + (Y_m - \widehat{B}_k S_m)\,(V_m^\top S_m)^{-1}\,V_m^\top
   }
 \end{equation}
-где $\widehat{B}_k \in \mathbb{R}^{n \times n}$~--- базовая матрица,
-$V_m \in \mathbb{R}^{n \times m}$~--- матрица направлений
+где $\widehat{B}_k \in \RR^{n \times n}$~--- базовая матрица,
+$V_m \in \RR^{n \times m}$~--- матрица направлений
 ($V_m^\top S_m$ невырождена). Прямая подстановка даёт
 $B_{k+1} S_m = Y_m$ при~любом допустимом~$V_m$; ранг
 $\Delta_k = B_{k+1}-\widehat{B}_k$ не~превосходит~$m$.
 
 \subsection*{Частный случай: $m = 1$}
 
-При $m = 1$ имеем $S_m = s_k$, $Y_m = y_k$, $V_m = v_k \in \mathbb{R}^n$,
+При $m = 1$ имеем $S_m = s_k$, $Y_m = y_k$, $V_m = v_k \in \RR^n$,
 и формула~\eqref{eq:general} принимает вид
 \begin{equation}\label{eq:rank1}
   B_{k+1} = \widehat{B}_k + \frac{(y_k - \widehat{B}_k s_k)\,v_k^\top}{v_k^\top s_k}.
@@ -362,9 +362,9 @@ $\mathtt{accumulate}=\text{false}$ и~используется в~численн
 ближайший прецедент глобализации мультисекущих обновлений для
 нелинейных систем; ключевое отличие от~режима, рассматриваемого
 в~настоящей работе,~--- в~технике переноса bounded deterioration
-через виртуальный <<следующий>> базовый якобиан, что~не~требует
-повторного анализа разложения~\eqref{eq:bd_rank1} для каждого
-варианта линейного поиска.
+через вспомогательную аппроксимацию якобиана на~шаге $k+1$,
+что~не~требует повторного анализа разложения~\eqref{eq:bd_rank1}
+для каждого варианта линейного поиска.
 
 \subsection{Limited-memory реализации}
 
