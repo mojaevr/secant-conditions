@@ -55,17 +55,16 @@ SP-Broyden/
 │   │   └── references.bib
 │   ├── mipt-thesis-bs.cls      # шаблон МФТИ
 │   └── fig_*.pdf               # рисунки для глав 2–3
-├── diag_global_study.py        # глобальный study (fig_global_*)
-├── diag_highdim.py             # L-PB на высокоразмерных задачах
-├── diag_highdim_stat.py        # статистика по высокоразмерным запускам
-├── diag_jacerr_stat.py         # ошибка якобиана (fig_sp_broyden_jacerr)
-├── diag_ndim_stat.py           # SS-SR1/SS-PSB vs SR1/PSB (fig_ndim_stat_*)
-├── diag_ndim_noarmijo.py       # SS без Armijo (глобальный режим)
-├── diag_ndim_noarmijo_local.py # SS без Armijo (локальный режим)
-├── diag_ss_local_basin.py      # бассейн локальной сходимости (fig_ss_local_basin)
-├── diag_ss_local_quadratic.py  # квадратичная сходимость (fig_ss_local_quadratic)
-├── diag_ss_local_sweep.py      # вспомогательный sweep
-├── *_summary.txt, *.npz        # результаты экспериментов (входы для рисунков)
+├── diag_highdim.py             # L-PB-реализации (библиотека для diag_highdim_stat)
+├── diag_highdim_stat.py        # fig_highdim_conv: статистика n=10^4/10^5
+├── diag_jacerr_stat.py         # fig_sp_broyden_jacerr: ошибка якобиана PB
+├── diag_ndim_stat.py           # fig_ndim_stat_*: SS-SR1/SS-PSB vs SR1/PSB
+├── diag_ndim_noarmijo.py       # run_no_armijo (библиотека для diag_ss_local_basin)
+├── diag_ss_local_basin.py      # fig_ss_local_basin: бассейн локальной сходимости
+├── diag_ss_local_quadratic.py  # fig_ss_local_quadratic: квадратичная сходимость
+├── diag_ss_local_sweep.py      # supplementary: sweep по (n, κ, R)
+├── ndim_stat_summary.txt       # сводка для диссертационных fig_ndim_stat_*
+├── *.npz                       # сырые результаты экспериментов
 ├── (2019) Положение о ВКР.pdf  # нормативный документ МФТИ
 └── README.md
 ```

@@ -56,7 +56,12 @@ def sp_broyden_track(F, Jf, x0, p_max=0, maxit=600, tol=1e-10):
     """Возвращает массив jac_err: ||B_k - J(x_k)||_F по итерациям.
     Длина массива = число выполненных итераций (или maxit при отказе).
     Возвращает также флаг сходимости (||F||<tol) для статистики.
-    """
+
+    На траекториях, где B численно расходится (классический Бройден,
+    p_max=0), промежуточные операции matmul/solve производят overflow:
+    результат корректно обрабатывается проверкой `np.isfinite` ниже,
+    но без `errstate` numpy сыпет RuntimeWarning'ами. Глушим их
+    локально на блоке обновления."""
     n = len(x0)
     x = x0.astype(float).copy()
     Fx = F(x)
@@ -69,45 +74,47 @@ def sp_broyden_track(F, Jf, x0, p_max=0, maxit=600, tol=1e-10):
     F0_norm = float(norm(Fx))
     res_norm = [1.0]
     converged = False
-    for k in range(maxit):
-        if norm(Fx) < tol:
-            converged = True
-            break
-        try:
-            d = solve(B, -Fx)
-        except np.linalg.LinAlgError:
-            break
-        if not np.all(np.isfinite(d)):
-            break
-        x_new = x + d
-        Fx_new = F(x_new)
-        if not np.all(np.isfinite(Fx_new)):
-            break
-        s = d; y = Fx_new - Fx
-        S_hist.append(s.copy())
-        # p = min(p_max, k) — без адаптивного отбора
-        p_eff = min(p_max, len(S_hist) - 1)
-        if p_eff == 0:
-            v = s
-        else:
-            cols = [S_hist[-1 - j] for j in range(p_eff + 1)]
-            Sp = np.column_stack(cols); G = Sp.T @ Sp
-            e1 = np.zeros(p_eff + 1); e1[0] = 1.0
+    with np.errstate(over="ignore", under="ignore", invalid="ignore",
+                     divide="ignore"):
+        for k in range(maxit):
+            if norm(Fx) < tol:
+                converged = True
+                break
             try:
-                v = Sp @ solve(G, e1)
+                d = solve(B, -Fx)
             except np.linalg.LinAlgError:
+                break
+            if not np.all(np.isfinite(d)):
+                break
+            x_new = x + d
+            Fx_new = F(x_new)
+            if not np.all(np.isfinite(Fx_new)):
+                break
+            s = d; y = Fx_new - Fx
+            S_hist.append(s.copy())
+            # p = min(p_max, k) — без адаптивного отбора
+            p_eff = min(p_max, len(S_hist) - 1)
+            if p_eff == 0:
                 v = s
-        denom = float(v @ s)
-        if abs(denom) < 1e-14:
-            break
-        Bs = B @ s
-        B = B + np.outer(y - Bs, v) / denom
-        x, Fx = x_new, Fx_new
-        Jx = Jf(x)
-        jac_err.append(norm(B - Jx, ord="fro") / norm(Jx, ord="fro"))
-        res_norm.append(float(norm(Fx)) / F0_norm)
-        if len(S_hist) > p_max + 5:
-            S_hist.pop(0)
+            else:
+                cols = [S_hist[-1 - j] for j in range(p_eff + 1)]
+                Sp = np.column_stack(cols); G = Sp.T @ Sp
+                e1 = np.zeros(p_eff + 1); e1[0] = 1.0
+                try:
+                    v = Sp @ solve(G, e1)
+                except np.linalg.LinAlgError:
+                    v = s
+            denom = float(v @ s)
+            if abs(denom) < 1e-14:
+                break
+            Bs = B @ s
+            B = B + np.outer(y - Bs, v) / denom
+            x, Fx = x_new, Fx_new
+            Jx = Jf(x)
+            jac_err.append(norm(B - Jx, ord="fro") / norm(Jx, ord="fro"))
+            res_norm.append(float(norm(Fx)) / F0_norm)
+            if len(S_hist) > p_max + 5:
+                S_hist.pop(0)
     return np.array(jac_err), np.array(res_norm), F0_norm, converged
 
 

@@ -1,45 +1,29 @@
 """
-diag_highdim.py — эксперименты PB / L-PB в высокой размерности.
+diag_highdim.py — библиотека реализаций PB / L-PB / Anderson для
+высокоразмерных экспериментов.
 
-Закрывает три пункта блока P2 «Высокая размерность / limited memory» в REVIEW_TODO:
-  1) эксперименты при n ∈ {1000, 10000} с обратной формулой Шермана–Моррисона;
-  2) реализация и обсуждение L-PB (limited-memory Projected Broyden);
-  3) сравнение с L-Broyden (классический Бройден, limited-memory) и Anderson(m,β).
+Содержит:
+  * векторизованные тестовые задачи (Discrete BVP, Broyden Banded, Banded Cubic);
+  * `broyden_sm` — классический Бройден через Шермана–Моррисон;
+  * `sp_broyden_sm` — Projected Broyden-SM с окном p;
+  * `apply_H_pairs`, `lsp_broyden` — limited-memory L-PB рекурсия;
+  * `anderson_solve` — Anderson(m, β) поверх Picard для контроля;
+  * вспомогательные: `armijo_step`, `step_cap`.
 
-Все методы сравниваются на одинаковом backtracking-Армихо по merit-функции
-ψ(x) = ½‖F(x)‖² (для шага d = -H_k F(x)) и одинаковом критерии остановки
-‖F(x_k)‖₂ ≤ ε_tol = 10^{-10}.
+Все методы поддерживают необязательный backtracking-Армихо
+($c_1=10^{-4}$, $\\psi=\\tfrac12\\|F\\|^2$) и единый критерий остановки
+$\\|F\\|_2\\le 10^{-10}$.
 
-Тестовые задачи (Moré–Garbow–Hillstrom 1981, векторизованные):
-  (A) Discrete BVP (MGH #28) — трёхдиагональный линеаризованный якобиан;
-  (B) Broyden Banded (MGH #31) — лента ширины 7, существенно нелинейный.
-
-Размерности: n ∈ {1000, 10000}. Количество семейств × размеров × методов ≈ 16 экспериментов.
-
-Выход (mipt_thesis_master/):
-  fig_highdim_conv.pdf      — ‖F‖ vs итерация, 4 панели (2 задачи × 2 размера)
-  fig_highdim_summary.pdf   — bar-chart: итерации × #fevals × wall-time × peak-memory
-  fig_highdim_pvar.pdf      — variation окна L-PB m ∈ {2,5,10,20}, n=1000
-
-Сырые: highdim_results.npz.
-
-Воспроизводимость: NumPy 2.x, фиксированный seed=20260430 для всех источников
-случайности (стартовые точки детерминированы; default_rng оставлен для совместимости
-с reproducibility.tex).
+Этот модуль — чистая библиотека: импортируется из `diag_highdim_stat.py`.
+Параметры и стартовые точки конкретных экспериментов задаёт скрипт-обёртка.
 """
 
 from __future__ import annotations
 
-import os
 import time
 import numpy as np
-from numpy.linalg import cond, norm, solve
-import matplotlib
+from numpy.linalg import norm, solve
 
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-
-OUT_DIR = "mipt_thesis_master"
 SEED = 20260430
 EPS_TOL = 1e-10
 
@@ -495,236 +479,3 @@ def anderson_solve(F, x0, m=10, beta=1.0, tau=None, maxiter=600, tol=EPS_TOL,
                 fevals=np.array(fevals), wall=wall, peak_floats=peak_floats,
                 converged=converged, iters=len(res) - 1)
 
-
-# ----------------------------------------------------------------------
-# Прогон одной задачи × одной размерности.
-# ----------------------------------------------------------------------
-
-
-def run_problem(prob_name, n, methods, maxiter):
-    F, x0_fn = PROBLEMS[prob_name]
-    x0 = x0_fn(n)
-    out = {}
-    print(f"\n=== {prob_name}, n={n} ===")
-    for name, fn in methods:
-        try:
-            r = fn(F, x0, maxiter=maxiter)
-        except Exception as e:
-            print(f"  [{name:<22s}]  FAILED: {e}")
-            continue
-        out[name] = r
-        print(
-            f"  [{name:<22s}] iters={r['iters']:>4d}  fevals={int(r['fevals'][-1]):>5d}  "
-            f"wall={r['wall']:>7.3f}s  ‖F‖={float(r['res'][-1]):.2e}  "
-            f"peak≈{r['peak_floats']/1e6:>7.2f}M"
-        )
-    return out
-
-
-# ----------------------------------------------------------------------
-# Фигуры.
-# ----------------------------------------------------------------------
-
-
-def plot_convergence(all_results):
-    """4 панели: 2 задачи × 2 размера. ‖F(x_k)‖ vs итерация."""
-    sizes = sorted({n for (_, n) in all_results.keys()})
-    probs = sorted({p for (p, _) in all_results.keys()})
-    fig, axes = plt.subplots(len(probs), len(sizes),
-                             figsize=(4.6 * len(sizes), 3.4 * len(probs)),
-                             squeeze=False)
-    color_map = {
-        "Broyden-SM": ("#888888", (0, (5, 3))),
-        "PB-SM(p≤5)": ("#2060B0", (0, (4, 2))),
-        "L-Broyden(m=10)": ("#7E57C2", (0, (3, 1, 1, 1))),
-        "L-PB(m=10,p≤5)": ("#D03030", "-"),
-        "L-PB(m=20,p≤5)": ("#FF8C00", (0, (1, 0.5))),
-        "Anderson(m=10,β=1.0)": ("#2E8B57", (0, (1, 1))),
-    }
-    for i, p in enumerate(probs):
-        for j, n in enumerate(sizes):
-            ax = axes[i][j]
-            res_dict = all_results.get((p, n), {})
-            for name, r in res_dict.items():
-                style = color_map.get(name, ("#000000", "-"))
-                ax.semilogy(np.arange(len(r["res"])), r["res"],
-                            label=name, color=style[0], ls=style[1], lw=1.6)
-            ax.axhline(EPS_TOL, color="k", ls=":", lw=0.6, alpha=0.5)
-            ax.set_xlabel("итерация $k$")
-            ax.set_ylabel(r"$\|F(x_k)\|_2$")
-            ax.set_title(f"{p}, $n={n}$", fontsize=10)
-            ax.grid(True, which="both", ls=":", lw=0.4, alpha=0.5)
-    # общая легенда
-    handles, labels = axes[0][0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="lower center", ncol=min(5, len(labels)),
-               fontsize=8.6, bbox_to_anchor=(0.5, -0.02))
-    fig.suptitle("Сходимость в высокой размерности: PB vs limited-memory "
-                 "и Anderson", fontsize=11)
-    fig.tight_layout(rect=[0, 0.04, 1, 0.96])
-    out = os.path.join(OUT_DIR, "fig_highdim_conv.pdf")
-    fig.savefig(out, bbox_inches="tight"); plt.close(fig)
-    print(f"saved: {out}")
-
-
-def plot_summary(all_results):
-    """Bar-chart: итерации, #fevals, wall, peak-memory."""
-    method_order = [
-        "Broyden-SM",
-        "PB-SM(p≤5)",
-        "L-Broyden(m=10)",
-        "L-PB(m=10,p≤5)",
-        "L-PB(m=20,p≤5)",
-        "Anderson(m=10,β=1.0)",
-    ]
-    keys = sorted(all_results.keys())  # [(prob, n), ...]
-    n_keys = len(keys)
-    metrics = [
-        ("итерации", lambda r: r["iters"]),
-        ("число F-вычислений", lambda r: int(r["fevals"][-1])),
-        ("wall, секунды", lambda r: r["wall"]),
-        (r"память, $10^6$ float", lambda r: r["peak_floats"] / 1e6),
-    ]
-    fig, axes = plt.subplots(len(metrics), 1, figsize=(11.0, 3.2 * len(metrics)),
-                             squeeze=False)
-    cmap = plt.get_cmap("tab10")
-    width = 0.8 / max(1, len(method_order))
-    xpos = np.arange(n_keys)
-    for ax_idx, (mname, getter) in enumerate(metrics):
-        ax = axes[ax_idx][0]
-        for mi, name in enumerate(method_order):
-            ys = []
-            for k in keys:
-                r = all_results.get(k, {}).get(name, None)
-                if r is None or not r.get("converged", False):
-                    ys.append(np.nan)
-                else:
-                    ys.append(getter(r))
-            ax.bar(xpos + (mi - len(method_order) / 2) * width + width / 2,
-                   ys, width, label=name, color=cmap(mi))
-        ax.set_xticks(xpos)
-        ax.set_xticklabels([f"{p}\n$n={n}$" for (p, n) in keys], fontsize=8.5)
-        ax.set_ylabel(mname, fontsize=9)
-        if mname.startswith("wall") or mname.startswith("память"):
-            ax.set_yscale("log")
-        ax.grid(True, axis="y", ls=":", lw=0.4, alpha=0.5)
-        if ax_idx == 0:
-            ax.legend(fontsize=8.0, ncol=min(5, len(method_order)),
-                      loc="upper left", bbox_to_anchor=(0.0, 1.18))
-    fig.suptitle("Итог по методу × задаче × $n$: итерации, число F-вычислений, "
-                 "время и память",
-                 fontsize=11, y=1.00)
-    fig.tight_layout()
-    out = os.path.join(OUT_DIR, "fig_highdim_summary.pdf")
-    fig.savefig(out, bbox_inches="tight"); plt.close(fig)
-    print(f"saved: {out}")
-
-
-def plot_pvar(pvar_results):
-    """Variation памяти m ∈ {2,5,10,20} при n=1000, фиксированном p_max=m, для одной задачи."""
-    fig, ax = plt.subplots(1, 1, figsize=(6.6, 3.6))
-    cmap = plt.get_cmap("viridis")
-    keys = sorted(pvar_results.keys())  # [m]
-    for i, m_val in enumerate(keys):
-        r = pvar_results[m_val]
-        if r is None:
-            continue
-        c = cmap(i / max(1, len(keys) - 1))
-        ax.semilogy(np.arange(len(r["res"])), r["res"],
-                    color=c, lw=1.7, label=f"$m={m_val}$")
-    ax.axhline(EPS_TOL, color="k", ls=":", lw=0.6, alpha=0.5)
-    ax.set_xlabel("итерация $k$")
-    ax.set_ylabel(r"$\|F(x_k)\|_2$")
-    ax.set_title("L-PB, Discrete BVP, $n=1000$: глубина окна $m$",
-                 fontsize=10.5)
-    ax.grid(True, which="both", ls=":", lw=0.4, alpha=0.5)
-    ax.legend(fontsize=9, ncol=2)
-    fig.tight_layout()
-    out = os.path.join(OUT_DIR, "fig_highdim_pvar.pdf")
-    fig.savefig(out, bbox_inches="tight"); plt.close(fig)
-    print(f"saved: {out}")
-
-
-# ----------------------------------------------------------------------
-# Main.
-# ----------------------------------------------------------------------
-
-
-def main():
-    rng = np.random.default_rng(SEED)
-    os.makedirs(OUT_DIR, exist_ok=True)
-
-    # --- Эксперимент 1 + 2: 2 задачи × 2 размера × 5 методов ---
-    # Все Бройден-семейные методы — с глобализацией Армихо (Алгоритм 2 гл. 2).
-    methods_dense = [
-        ("Broyden-SM",
-         lambda F, x, maxiter: broyden_sm(F, x, maxiter=maxiter, globalize=True)),
-        ("PB-SM(p≤5)",
-         lambda F, x, maxiter: sp_broyden_sm(F, x, p_max=5, maxiter=maxiter,
-                                             globalize=True)),
-        ("L-Broyden(m=10)",
-         lambda F, x, maxiter: lsp_broyden(F, x, m=10, p_max=0, maxiter=maxiter,
-                                           globalize=True)),
-        ("L-PB(m=10,p≤5)",
-         lambda F, x, maxiter: lsp_broyden(F, x, m=10, p_max=5, maxiter=maxiter,
-                                           globalize=True)),
-        ("Anderson(m=10,β=1.0)",
-         lambda F, x, maxiter: anderson_solve(F, x, m=10, beta=1.0, maxiter=maxiter)),
-    ]
-    methods_lim = [
-        # для n=10000 dense Broyden/SP-Broyden пропускаем (n²=10^8 floats)
-        ("L-Broyden(m=10)",
-         lambda F, x, maxiter: lsp_broyden(F, x, m=10, p_max=0, maxiter=maxiter,
-                                           globalize=True)),
-        ("L-PB(m=10,p≤5)",
-         lambda F, x, maxiter: lsp_broyden(F, x, m=10, p_max=5, maxiter=maxiter,
-                                           globalize=True)),
-        ("L-PB(m=20,p≤5)",
-         lambda F, x, maxiter: lsp_broyden(F, x, m=20, p_max=5, maxiter=maxiter,
-                                           globalize=True)),
-        ("Anderson(m=10,β=1.0)",
-         lambda F, x, maxiter: anderson_solve(F, x, m=10, beta=1.0, maxiter=maxiter)),
-    ]
-
-    all_results = {}
-    for prob in PROBLEMS:
-        for n_dim in (1000, 10000):
-            mset = methods_dense if n_dim == 1000 else methods_lim
-            maxit = 600 if n_dim == 1000 else 800
-            res = run_problem(prob, n_dim, mset, maxit)
-            all_results[(prob, n_dim)] = res
-
-    # --- Эксперимент 3: variation m в L-PB при n=1000, Banded Cubic ---
-    print("\n=== L-PB, Banded Cubic, n=1000, варьирование m ===")
-    pvar_results = {}
-    for m_val in (2, 5, 10, 20):
-        F = banded_cubic_F; x0 = banded_cubic_x0(1000)
-        r = lsp_broyden(F, x0, m=m_val, p_max=min(m_val, 5), maxiter=400,
-                        globalize=True)
-        pvar_results[m_val] = r
-        print(f"  m={m_val:>2d}: iters={r['iters']:>4d}  fevals={int(r['fevals'][-1]):>5d}  "
-              f"‖F‖={r['res'][-1]:.2e}  peak≈{r['peak_floats']/1e6:.2f}M")
-
-    # --- Сохранить .npz и фигуры ---
-    plot_convergence(all_results)
-    plot_summary(all_results)
-    plot_pvar(pvar_results)
-
-    # сериализация (упрощённая: только числовые ряды)
-    np_save = {}
-    for (p, n), runs in all_results.items():
-        for name, r in runs.items():
-            tag = f"{p}|n={n}|{name}"
-            np_save[tag + "::res"] = r["res"]
-            np_save[tag + "::fevals"] = r["fevals"]
-            np_save[tag + "::wall"] = np.array([r["wall"]])
-            np_save[tag + "::peak"] = np.array([r["peak_floats"]])
-    for m_val, r in pvar_results.items():
-        tag = f"DBVP|n=1000|m={m_val}"
-        np_save[tag + "::res"] = r["res"]
-        np_save[tag + "::fevals"] = r["fevals"]
-    np.savez_compressed("highdim_results.npz", **np_save)
-    print("saved: highdim_results.npz")
-
-
-if __name__ == "__main__":
-    main()

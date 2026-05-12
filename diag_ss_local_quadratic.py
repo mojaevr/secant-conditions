@@ -92,11 +92,21 @@ def run_traced(prob, x0, method, p_window=5, max_iter=80, tol=1e-12):
 
 
 def pad_to(arrs, length):
-    """Pad each trajectory to length with NaN at the tail (после сходимости)."""
+    """Pad each trajectory to length with the LAST observed value (pad-by-last).
+
+    Это согласовано с `aggregate_g` в diag_ndim_stat.py: ранее сошедшиеся
+    траектории «застывают» на достигнутом значении, а не превращаются в NaN
+    в хвосте — иначе медиана к концу окна определяется только остающимися
+    «трудными» стартами и даёт ложную осцилляцию. Расходящиеся траектории,
+    оборванные по norm > 1e10, также фиксируются на последнем конечном
+    значении (а если самое последнее уже не finite — на нём, что для
+    логграфика всё равно выпадет)."""
     out = np.full((len(arrs), length), np.nan)
     for i, a in enumerate(arrs):
         m = min(len(a), length)
         out[i, :m] = a[:m]
+        if m < length and m > 0:
+            out[i, m:] = a[m - 1]
     return out
 
 
@@ -127,7 +137,7 @@ def main():
         'ss_psb': dict(label='SS-PSB', color='#d62728', ls='-'),
     }
 
-    fig, axes = plt.subplots(1, 2, figsize=(8.6, 3.3), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(8.6, 3.3), sharey=False)
     for ax, panel in zip(axes, panels):
         n = panel['n']
         prob = quadratic(n=n, kappa=panel['kappa'])
@@ -153,11 +163,14 @@ def main():
         ax.set_yscale('log')
         ax.set_xlabel(r'итерация $k$')
         ax.set_xlim(0, max_iter)
-        ax.set_ylim(1e-13, None)
+        # Независимый автоscale по верху на каждую панель: правая
+        # с расходящимся PSB иначе уходит за пределы общего диапазона
+        # (sharey левой панели). Низ фиксируем у tol.
+        ax.set_ylim(bottom=1e-13)
         ax.set_title(panel['title'], fontsize=11)
         ax.grid(True, which='both', ls=':', lw=0.4, alpha=0.5)
         ax.legend(fontsize=9, loc='upper right', framealpha=0.9)
-    axes[0].set_ylabel(r'$\|\nabla f(x_k)\|$')
+        ax.set_ylabel(r'$\|\nabla f(x_k)\|$')
     fig.suptitle(
         r'Локальная сходимость без Armijo: '
         r'$f(x)=\frac{1}{2}\,x^\top A x$,'
