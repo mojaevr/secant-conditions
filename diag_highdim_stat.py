@@ -26,9 +26,10 @@ import diag_highdim as dh   # импорт реализаций методов
 def main():
     # Настройки для трёх размерностей. dense_seeds — сколько прогонов dense
     # позволяем себе (на n=10^4 он стоит ~800 MB и заметное wall-time).
+    # m=3 при p_max=5 нарушает m ≥ p_max+1 и должен демонстрировать срыв.
     configs = [
-        dict(n=10_000, n_seeds=8, dense_seeds=3, m_values=[5, 10, 20]),
-        dict(n=100_000, n_seeds=4, dense_seeds=0, m_values=[10, 20]),
+        dict(n=10_000, n_seeds=16, dense_seeds=6, m_values=[3, 5, 10, 20]),
+        dict(n=100_000, n_seeds=8, dense_seeds=0, m_values=[10, 20]),
     ]
 
     rng = np.random.default_rng(20260502)

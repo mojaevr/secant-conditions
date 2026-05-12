@@ -28,7 +28,8 @@ THESIS_DIR = os.path.join(SCRIPT_DIR, "mipt_thesis_master")
 
 
 def quadratic(n=10, kappa=10.0, seed=42):
-    """f(x) = (1/2) x^T A x, A = Q diag(1,…,κ) Q^T, Q ∈ O(n), x* = 0.
+    """f(x) = (1/2) x^T A x, A = Q diag(λ_1,…,λ_n) Q^T, λ_i = κ^((i-1)/(n-1)),
+    Q ∈ O(n), x* = 0.
 
     Чистая выпуклая квадратика — учебниковый локальный случай теоремы
     thm:ss_dm. (H4) выполнено тривиально (полный QN-шаг = шаг Ньютона

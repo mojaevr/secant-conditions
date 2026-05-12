@@ -113,7 +113,7 @@ def sp_broyden_track(F, Jf, x0, p_max=0, maxit=600, tol=1e-10):
             Jx = Jf(x)
             jac_err.append(norm(B - Jx, ord="fro") / norm(Jx, ord="fro"))
             res_norm.append(float(norm(Fx)) / F0_norm)
-            if len(S_hist) > p_max + 5:
+            if len(S_hist) > p_max + 1:
                 S_hist.pop(0)
     return np.array(jac_err), np.array(res_norm), F0_norm, converged
 
