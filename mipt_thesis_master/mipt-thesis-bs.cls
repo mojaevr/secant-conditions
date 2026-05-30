@@ -182,16 +182,22 @@
                                      {1.5ex \@plus .2ex}%
                              {\normalfont\large\centering}}
 %%%%%%%% Captions %%%%%%%%%%%%%%%%%%%%%%%%%%
-\long\def\@makecaption#1#2{%
-  \vskip\abovecaptionskip
-  \sbox\@tempboxa{#1. #2}%
-  \ifdim \wd\@tempboxa >\hsize
-    #1. #2\par
-  \else
-    \global \@minipagefalse
-    \hb@xt@\hsize{\hfil\box\@tempboxa\hfil}%
-  \fi
-  \vskip\belowcaptionskip}
+% Подписи рисунков и таблиц оформляются пакетом caption (см. преамбулу
+% main.tex): разделитель «номер — название» через тире по Положению о ВКР
+% (Прил. 2). Собственное \@makecaption класса отключено, иначе оно
+% перебивало бы настройку labelsep пакета caption (ставило точку и
+% центрировало все подписи).
+%
+% \long\def\@makecaption#1#2{%
+%   \vskip\abovecaptionskip
+%   \sbox\@tempboxa{#1. #2}%
+%   \ifdim \wd\@tempboxa >\hsize
+%     #1. #2\par
+%   \else
+%     \global \@minipagefalse
+%     \hb@xt@\hsize{\hfil\box\@tempboxa\hfil}%
+%   \fi
+%   \vskip\belowcaptionskip}
 
 %%%%%%%% Headings
 \fancypagestyle{miptthesis}{%

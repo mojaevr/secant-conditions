@@ -151,7 +151,14 @@
 % переопределяет \figurename как «Рис.», поэтому переопределяем после
 % него (а также форматируем разделитель — endash вместо двоеточия).
 \usepackage{caption}
-\captionsetup{labelsep=endash,font=normal}
+% --- Разделитель «номер — название» через тире (em-dash) по Положению
+% --- о ВКР, Прил. 2: «...в одну строку с её номером через тире»;
+% --- пример из Положения «Рисунок 1 — Детали прибора». Стандартный
+% --- labelsep=endash даёт короткое en-dash, поэтому объявляем
+% --- собственный разделитель с настоящим тире (\nobreakspace перед ним
+% --- удерживает номер с тире на одной строке).
+\DeclareCaptionLabelSeparator{gostdash}{~--- }
+\captionsetup{labelsep=gostdash,font=normal}
 \captionsetup[table]{justification=raggedright,singlelinecheck=false}
 \addto\captionsrussian{%
   \renewcommand{\figurename}{Рисунок}%
