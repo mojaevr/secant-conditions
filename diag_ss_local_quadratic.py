@@ -7,7 +7,7 @@
   * SS-PSB ускоряет PSB локально (предсказание Q-сверхлинейности).
 
 Выход: mipt_thesis_master/fig_ss_local_quadratic.pdf — 2 панели
-(κ=10 и κ=100), траектории ||∇f(x_k)||: медиана + IQR по 50 стартам.
+(κ=10^3 и κ=10^2), траектории ||∇f(x_k)||: медиана + IQR по 50 стартам.
 """
 from __future__ import annotations
 

@@ -232,7 +232,7 @@ def run(prob, x0, method, p_window=5, max_iter=500, tol=1e-8):
     converged = (hist_g[-1] <= tol)
     status = "converged" if converged else "max_iter"
 
-    for k in range(max_iter):
+    for _ in range(max_iter):
         if hist_g[-1] <= tol:
             converged = True; status = "converged"; break
 
@@ -539,8 +539,6 @@ def main():
 
     # 4 метода гоняем на всех конфигурациях (paired-design):
     methods_all = ['sr1', 'ss_sr1', 'psb', 'ss_psb']
-    pairs = [('sr1', 'ss_sr1'),
-             ('psb', 'ss_psb')]
 
     ecv_configs = [(10, 100.0, 1.5),
                    (20, 100.0, 1.5),
@@ -596,7 +594,7 @@ def main():
             break
         prob = extended_curved_valley(n=nv, alpha=alpha, beta=beta)
         print(f"\n[ECV n={nv}]  R0=||x_0||={norm(prob['x0']):.3f}")
-        out, R0, _ = run_problem(prob, methods_all, n_dirs, U_by_n[nv],
+        _, R0, _ = run_problem(prob, methods_all, n_dirs, U_by_n[nv],
                                  max_iter, tol, raw=raw,
                                  key_prefix=('ecv', nv), deadline=deadline)
         R0_table[('ecv', nv)] = R0
@@ -615,7 +613,7 @@ def main():
         prob = (rosenbrock_chained(10) if short == 'ros_chain'
                 else extended_rosenbrock(10))
         print(f"\n[{prob['name']}]  R0=||x_0||={norm(prob['x0']):.3f}")
-        out, R0, _ = run_problem(prob, methods_all, n_dirs, U_by_n[10],
+        _, R0, _ = run_problem(prob, methods_all, n_dirs, U_by_n[10],
                                  max_iter, tol, raw=raw,
                                  key_prefix=(short, 10), deadline=deadline)
         R0_table[(short, 10)] = R0

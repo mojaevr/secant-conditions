@@ -15,7 +15,6 @@ from __future__ import annotations
 import os
 import warnings
 import numpy as np
-from numpy.linalg import norm
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt

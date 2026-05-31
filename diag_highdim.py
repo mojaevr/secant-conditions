@@ -24,7 +24,6 @@ import time
 import numpy as np
 from numpy.linalg import norm, solve
 
-SEED = 20260430
 EPS_TOL = 1e-10
 
 # ----------------------------------------------------------------------
@@ -151,7 +150,7 @@ def armijo_step(F, x, Fx, d, c1: float = 1e-4, max_back: int = 25) -> tuple:
         if psi_new <= psi0 * (1.0 - 2.0 * c1 * alpha):
             return alpha, x_new, Fx_new, n_evals
         alpha *= 0.5
-    # выдыхаем: вернуть последнюю точку
+    # исчерпан бюджет backtracking — вернуть последнюю точку
     return alpha, x_new, Fx_new, n_evals
 
 
@@ -436,7 +435,6 @@ def anderson_solve(F, x0, m=10, beta=1.0, tau=None, maxiter=600, tol=EPS_TOL,
     t0 = time.time()
     peak_floats = float(2 * n * m + 2 * n)
     converged = False
-    x_prev = x; f_prev = f_curr.copy()
     last_res = res[-1]
     for k in range(maxiter):
         if res[-1] < tol:
@@ -467,7 +465,7 @@ def anderson_solve(F, x0, m=10, beta=1.0, tau=None, maxiter=600, tol=EPS_TOL,
             X = []; F_hist = []
             x_new = x - tau * Fx
             Fx_new = F(x_new); n_eval += 1
-        # safeguard: рост резидуала ⇒ половиним β локально (не реализован, оставлен полный β)
+        # при росте резидуала — рестарт окна (см. ниже); локальное уменьшение β не применяется
         res_new = float(norm(Fx_new))
         if res_new > 2.0 * last_res and len(X) > 1:
             # рестарт

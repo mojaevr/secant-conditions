@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import os
 import numpy as np
-from numpy.linalg import cond, norm, solve
+from numpy.linalg import norm, solve
 
 import matplotlib
 matplotlib.use("Agg")
@@ -55,7 +55,7 @@ def discrete_bvp_x0_default(n):
 def sp_broyden_track(F, Jf, x0, p_max=0, maxit=600, tol=1e-10):
     """Возвращает массив jac_err: ||B_k - J(x_k)||_F по итерациям.
     Длина массива = число выполненных итераций (или maxit при отказе).
-    Возвращает также флаг сходимости (||F||<tol) для статистики.
+    Возвращает кортеж (jac_err, res_norm, F0_norm, converged) для статистики.
 
     На траекториях, где B численно расходится (классический Бройден,
     p_max=0), промежуточные операции matmul/solve производят overflow:
@@ -92,7 +92,7 @@ def sp_broyden_track(F, Jf, x0, p_max=0, maxit=600, tol=1e-10):
                 break
             s = d; y = Fx_new - Fx
             S_hist.append(s.copy())
-            # p = min(p_max, k) — без адаптивного отбора
+            # p_eff = min(p_max, len(S_hist)-1); адаптивный отбор удалён
             p_eff = min(p_max, len(S_hist) - 1)
             if p_eff == 0:
                 v = s
@@ -131,7 +131,7 @@ def main():
     p_values = [0, 1, 2, 5, 10]
     cmap = plt.get_cmap("viridis")
     methods = []
-    for i, p in enumerate(p_values):
+    for p in p_values:
         name = (r"Бройден ($p_{\max}=0$)" if p == 0
                 else rf"PB, $p_{{\max}}={p}$")
         methods.append((name, dict(p_max=p)))

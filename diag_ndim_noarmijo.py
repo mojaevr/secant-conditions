@@ -24,7 +24,7 @@ from diag_ndim_stat import (
 def run_no_armijo(prob, x0, method, p_window=5, max_iter=500, tol=1e-8):
     """Тот же контракт, что diag_ndim_stat.run, но без Armijo: a≡1, без fallback."""
     n = prob['n']
-    f, gfun = prob['f'], prob['g']
+    gfun = prob['g']
     x = x0.copy()
     B = np.eye(n)
 
@@ -44,7 +44,7 @@ def run_no_armijo(prob, x0, method, p_window=5, max_iter=500, tol=1e-8):
         try:
             d = solve(B, -g)
         except LinAlgError:
-            status = "ls_fail"; break  # сингулярный B без Armijo — труба
+            status = "ls_fail"; break  # сингулярный B: без Armijo нет восстановления
 
         if not np.all(np.isfinite(d)):
             status = "diverge"; break
