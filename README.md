@@ -6,6 +6,15 @@
 Автор: Можаев Р. М., МФТИ, ФПМИ, кафедра ППИАД, группа М05-404а.
 Научный руководитель: Камзолов Д. И.
 
+## Полный текст
+
+Источник диссертации (LaTeX) ведётся в Overleaf. Текст для чтения:
+
+**<https://www.overleaf.com/read/ckwwvgrsqccy#b0f6bb>**
+
+LaTeX-исходник больше не хранится в этом репозитории; здесь остаются
+только скрипты воспроизведения экспериментов и сырые данные.
+
 ## Что в работе
 
 Диссертация развивает количественный локальный анализ **мультисекущего
@@ -39,22 +48,6 @@ NeurIPS 2024. arXiv:2405.15990.
 
 ```
 SP-Broyden/
-├── mipt_thesis_master/         # LaTeX-источник диссертации
-│   ├── main.tex                # главный файл сборки
-│   ├── main.pdf                # готовый PDF
-│   ├── build.sh                # двойной прогон pdflatex
-│   ├── sections/               # аннотация, обозначения, введение, 3 главы, заключение
-│   │   ├── abstract_ru.tex
-│   │   ├── notation.tex
-│   │   ├── introduction.tex
-│   │   ├── ch1_jacobian.tex    # обзор приближений якобиана
-│   │   ├── ch2_sp_broyden.tex  # Projected Broyden + L-PB
-│   │   ├── ch3_symmetric.tex   # Symmetric SP-Broyden (SS-U / SS-SR1)
-│   │   ├── conclusion.tex
-│   │   ├── bibliography.tex
-│   │   └── references.bib
-│   ├── mipt-thesis-bs.cls      # шаблон МФТИ
-│   └── fig_*.pdf               # рисунки для глав 2–3
 ├── diag_highdim.py             # L-PB-реализации (библиотека для diag_highdim_stat)
 ├── diag_highdim_stat.py        # fig_highdim_conv: статистика n=10^4/10^5
 ├── diag_jacerr_stat.py         # fig_sp_broyden_jacerr: ошибка якобиана PB
@@ -69,23 +62,13 @@ SP-Broyden/
 └── README.md
 ```
 
-## Сборка PDF
-
-`build.sh` собирает диссертацию через `pdflatex`, на macOS патчит
-путь к TeX Live 2026basic, если `pdflatex` нет в `$PATH`.
-
-```bash
-bash mipt_thesis_master/build.sh
-```
-
-Итог — `mipt_thesis_master/main.pdf`.
+Текст глав, рисунки и шаблон МФТИ — в Overleaf (см. ссылку выше).
 
 ## Воспроизведение экспериментов
 
 Скрипты `diag_*.py` требуют Python 3.10+ и NumPy/SciPy/matplotlib.
 Каждый скрипт автономен: запуск без аргументов перестраивает
-соответствующие `.npz`/`*_summary.txt` и обновляет PDF-рисунок
-в `mipt_thesis_master/`.
+соответствующие `.npz`/`*_summary.txt` и обновляет PDF-рисунок.
 
 ```bash
 pip install numpy scipy matplotlib
@@ -94,7 +77,5 @@ python diag_ndim_stat.py        # пример: пересобрать fig_ndim_
 
 ## Лицензия
 
-Шаблон диссертации (`mipt_thesis_master/mipt-thesis-*.cls`,
-`mipt_thesis_master/LICENSE`) — под лицензией авторов шаблона МФТИ.
-Остальной материал (тексты глав, скрипты экспериментов) —
-© Можаев Р. М., 2026.
+Материал репозитория (скрипты экспериментов, данные) —
+© Можаев Р. М., 2026. Шаблон диссертации МФТИ — под лицензией авторов шаблона.
