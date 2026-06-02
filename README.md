@@ -51,6 +51,7 @@ SP-Broyden/
 ├── diag_highdim_stat.py        # fig_highdim_conv: статистика n=10^4/10^5
 ├── diag_jacerr_stat.py         # fig_sp_broyden_jacerr: ошибка якобиана PB
 ├── diag_ndim_stat.py           # fig_ndim_stat_*: SS-SR1/SS-PSB vs SR1/PSB
+├── diag_viji_broyden.py        # fig_viji_broyden: VIJI с мультисекущим vs односекущим L-Broyden (гл. 4)
 ├── diag_ndim_noarmijo.py       # run_no_armijo (библиотека для diag_ss_local_basin)
 ├── diag_ss_local_basin.py      # fig_ss_local_basin: бассейн локальной сходимости
 ├── diag_ss_local_quadratic.py  # fig_ss_local_quadratic: квадратичная сходимость
