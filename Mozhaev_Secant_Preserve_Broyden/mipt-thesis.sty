@@ -1,0 +1,31 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{mipt-thesis}[2014/06/18 Supplementary packages of BS thesis class]
+
+% Tables
+\RequirePackage{tabularx,multirow}
+% Nice unit formatting
+% Опция binary-units удалена в siunitx v3.4+ (TeX Live 2026). Грузим без неё.
+\RequirePackage{siunitx}
+% Additional integral symbols
+\RequirePackage{esint}
+
+% Graphics
+\RequirePackage{graphicx}
+\RequirePackage{subcaption}
+\DeclareCaptionSubType[arabic]{figure}
+\renewcommand\thesubfigure{\asbuk{subfigure}}
+
+% Set continuous numbering
+% --- обход бага chngcntr 2018 в TeX Live 2026+: пакет делает \endinput
+% внутри группы, когда ядро уже предоставляет \counterwithout. Ядро даёт
+% нам \@removefromreset и \counterwithout/\counterwithin напрямую, так что
+% chngcntr нам не нужен. Делаем то, что делал chngcntr, руками.
+\@removefromreset{figure}{chapter}
+\@removefromreset{equation}{chapter}
+\@removefromreset{table}{chapter}
+\renewcommand{\thefigure}{\arabic{figure}}
+\renewcommand{\theequation}{\arabic{equation}}
+\renewcommand{\thetable}{\arabic{table}}
+
+
+\endinput

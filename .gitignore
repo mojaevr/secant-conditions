@@ -59,3 +59,7 @@ CH*_AUDIT_REPORT.txt
 # --- Files not part of the current thesis version (kept locally) -----------
 _archive/
 setup_git.sh
+
+# --- Reference PDFs and built output (kept locally, not tracked) ------------
+PhD_Thesis_Rodomanov_Final.pdf
+diplom_GOTOVO_v1.0.pdf

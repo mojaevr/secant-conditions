@@ -1,0 +1,310 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesClass{mipt-thesis}[2014/06/18 Class for the BS thesis in the MIPT]
+
+%%%%%% Class options %%%%%
+\DeclareOption*{
+    \ClassWarning{mipt-thesis}{Unknown option '\CurrentOption'}
+}
+\ProcessOptions\relax
+
+\LoadClass[a4paper,12pt,twoside]{book}
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%% Useful packages %%%%%
+% Math packages, should be loaded before fontenc and babel for Cyrillic
+\RequirePackage{amsmath,amsthm,amssymb}
+\RequirePackage{mathtext}
+% Fonts and lang
+\RequirePackage[T1,TS1,T2A]{fontenc}
+\RequirePackage[utf8]{inputenc}
+\RequirePackage[english,russian]{babel}
+% Formatting
+\RequirePackage{geometry}
+\RequirePackage{setspace}
+\RequirePackage{indentfirst}
+\RequirePackage{fancyhdr}
+\RequirePackage{nopageno}
+\RequirePackage{tocloft}
+% Style file with additional packages
+\RequirePackage{mipt-thesis}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%% TL 2026+ compatibility: один из пакетов выше (babel 26.x / geometry 6.0 /
+%%%%% siunitx 3.4.x) оставляет открытую группу, из-за чего ядро LaTeX 2025-11
+%%%%% ругается "Loading a class or package in a group" на каждом \usepackage
+%%%%% в main.tex и (каскадно) l3sockets падает внутри hyperref. Закрываем
+%%%%% «лишние» группы перед тем, как определять собственные команды класса.
+%%%%% NB: \loop здесь не сработает (его \body локален и теряется после первого
+%%%%% \endgroup); используем рекурсивный \gdef, который переживает \endgroup.
+%%%%% (Внутри .cls символ @ уже является буквой, \makeatletter не нужен.)
+\gdef\mt@flush@groups{\ifnum\currentgrouplevel>0 \endgroup \mt@flush@groups \fi}
+\mt@flush@groups
+%%%%% TL 2026 fix: убрали \begingroup\globaldefs=1\relax. Этот шаблон в TL
+%%%%% 2026 ломает внутренние LaTeX3 хелперы команд-парсера: при \renewcommand
+%%%%% под globaldefs=1 \@notdefinable/\@ifdefinable «протекают» в глобальный
+%%%%% хеш и потом hyperref/etoolbox падают с ложными «already defined» на
+%%%%% \undef и \footnoteautorefname. Определения и так находятся на верхнем
+%%%%% уровне .cls (group level 0) — им нечего «переживать», поэтому групповая
+%%%%% обёртка не нужна. \mt@flush@groups выше гарантирует GL=0.
+
+%%%%% Set up correct formatting %%%%%
+\geometry{left=3cm}
+\geometry{right=2cm}
+\geometry{top=2cm}
+\geometry{bottom=2cm}
+% NB: \onehalfspace — это ENVIRONMENT из setspace (открывает \begingroup),
+% а не команда установки межстрочного интервала. Раньше код «работал»
+% только потому, что \begingroup\globaldefs=1 ниже превращал все определения
+% в глобальные, и утечка группы была безвредной. После удаления globaldefs
+% утечка ломает классовские \newcommand'ы (они становятся локальными в
+% группе, открытой \onehalfspace, и теряются на выходе из неё). Используем
+% \onehalfspacing — преамбульная команда без группы.
+\onehalfspacing
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%% Some dark TeX magic %%%%%
+\addto\captionsrussian{\renewcommand{\contentsname}{Содержание}}
+\addto\captionsrussian{\renewcommand{\listfigurename}{Список иллюстраций}}
+\addto\captionsrussian{\renewcommand{\listtablename}{Список таблиц}}
+% Положение о ВКР МФТИ, Прил. 1 §3: структурный элемент называется
+% «Список использованных источников» (не «Литература»).
+\addto\captionsrussian{\renewcommand{\bibname}{Список использованных источников}}
+\addto\captionsrussian{\renewcommand{\indexname}{Index}}
+\addto\captionsrussian{\renewcommand{\figurename}{Рис.{}}}
+\addto\captionsrussian{\renewcommand{\tablename}{Таблица}}
+\addto\captionsrussian{\renewcommand{\partname}{Часть}}
+\addto\captionsrussian{\renewcommand{\chaptername}{Глава}}
+\addto\captionsrussian{\renewcommand{\appendixname}{Приложение}}
+%%% Has no effect since babel package switches tags (see https://tex.stackexchange.com/questions/153182/strange-behaviour-on-redefining-contentsname, /usr/share/texlive/texmf-dist/tex/generic/babel-russian/russianb.ldf (Debian))%%%
+%\renewcommand\contentsname{Содержание}
+%\renewcommand\listfigurename{Список иллюстраций}
+%\renewcommand\listtablename{Список таблиц}
+%\renewcommand\bibname{Литература}
+%\renewcommand\indexname{Index}
+%\renewcommand\figurename{Рис.{}}
+%\renewcommand\tablename{Таблица}
+%\renewcommand\partname{Часть}
+%\renewcommand\chaptername{Глава}
+%\renewcommand\appendixname{Приложение}
+
+
+\def\@part[#1]#2{%
+    \ifnum \c@secnumdepth >-2\relax
+      \refstepcounter{part}%
+      \addcontentsline{toc}{part}{\thepart\hspace{1em}#1}%
+    \else
+      \addcontentsline{toc}{part}{#1}%
+    \fi
+    \partmark{#1}%
+    {\centering
+     \interlinepenalty \@M
+     \normalfont
+     \ifnum \c@secnumdepth >-2\relax
+       \huge\bfseries\boldmath \partname~\thepart
+       \par
+       \vskip 20\p@
+     \fi
+     \Huge \bfseries\boldmath #2\par}%
+    \@endpart}
+\def\@spart#1{%
+    {\centering
+     \interlinepenalty \@M
+     \normalfont
+     \Huge \bfseries\boldmath #1\par}%
+    \@endpart}
+
+\def\@chapter[#1]#2{\ifnum \c@secnumdepth >\m@ne
+                       \if@mainmatter
+                         \refstepcounter{chapter}%
+                         \typeout{\@chapapp\space\thechapter.}%
+                         \addcontentsline{toc}{chapter}%
+                                   {\protect\numberline{\thechapter}#2}%
+                       \else
+                         \addcontentsline{toc}{chapter}{#2}%
+                       \fi
+                    \else
+                      \addcontentsline{toc}{chapter}{#2}%
+                    \fi
+                    \chaptermark{#1}%
+                    \addtocontents{lof}{\protect\addvspace{10\p@}}%
+                    \addtocontents{lot}{\protect\addvspace{10\p@}}%
+                    \if@twocolumn
+                      \@topnewpage[\@makechapterhead{#2}]%
+                    \else
+                      \@makechapterhead{#2}%
+                      \@afterheading
+                    \fi}
+
+
+% ГОСТ 7.32-2017 (на который ссылается Положение о ВКР, Прил. 2 §1):
+% «Заголовки структурных элементов отчета и заголовки разделов основной
+% части отчета следует располагать в середине строки». Поэтому
+% \raggedright заменён на \centering. Размеры шрифта (\huge/\Huge)
+% сохранены для визуальной иерархии: глава крупнее, чем параграфы.
+\def\@makechapterhead#1{%
+  \vspace*{50\p@}%
+  {\parindent \z@ \centering \normalfont
+    \ifnum \c@secnumdepth >\m@ne
+      \if@mainmatter
+        \huge\bfseries\boldmath \@chapapp\space \thechapter
+        \par\nobreak
+        \vskip 20\p@
+      \fi
+    \fi
+    \interlinepenalty\@M
+    \Huge \bfseries\boldmath #1\par\nobreak
+    \vskip 40\p@
+  }}
+\def\@makeschapterhead#1{%
+  \vspace*{50\p@}%
+  {\parindent \z@ \centering
+    \normalfont
+    \interlinepenalty\@M
+    \Huge \bfseries\boldmath  #1\par\nobreak
+    \vskip 40\p@
+  }}
+
+
+% Положение о ВКР МФТИ, Прил. 2 §4: «Заголовки параграфов (пунктов)
+% печатаются по центру строчными буквами (кроме первой прописной)».
+% Поэтому форматтер последнего аргумента \@startsection задаёт \centering
+% (не \raggedright, как было раньше). Регистр («строчные буквы кроме
+% первой прописной») обеспечивается стилем самих заголовков в .tex,
+% LaTeX-команда не делает преобразование. Подзаголовки --- такое же
+% выравнивание; sf-курсив у subsection убран как не предписанный
+% Положением и нестандартный для научного текста.
+\renewcommand\section{\@startsection {section}{1}{\z@}%
+                                   {-3.5ex \@plus -1ex \@minus -.2ex}%
+                                   {2.3ex \@plus.2ex}%
+                             {\normalfont\large\centering}}
+\renewcommand\subsection{\@startsection{subsection}{2}{\z@}%
+                                     {-3.25ex\@plus -1ex \@minus -.2ex}%
+                                     {1.5ex \@plus .2ex}%
+                             {\normalfont\large\centering}}
+%%%%%%%% Captions %%%%%%%%%%%%%%%%%%%%%%%%%%
+\long\def\@makecaption#1#2{%
+  \vskip\abovecaptionskip
+  \sbox\@tempboxa{#1. #2}%
+  \ifdim \wd\@tempboxa >\hsize
+    #1. #2\par
+  \else
+    \global \@minipagefalse
+    \hb@xt@\hsize{\hfil\box\@tempboxa\hfil}%
+  \fi
+  \vskip\belowcaptionskip}
+
+%%%%%%%% Headings
+\fancypagestyle{miptthesis}{%
+    \fancyhf{}
+    \fancyhead[RO, LE]{\thepage}
+    \fancyhead[CO]{\leftmark}
+    \fancyhead[CE]{\rightmark}
+}
+\pagestyle{miptthesis}
+\renewcommand{\chaptermark}[1]{\markboth{\hfill\normalfont #1\hfill}{}}
+\renewcommand{\sectionmark}[1]{\markright{\hfill\large\itshape \S\thesection\quad #1\hfill}}
+\let\partmark=\chaptermark
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%% Right TOC numbering %%%%%
+\renewcommand{\cftchapaftersnum}{.}
+\renewcommand{\cftsecaftersnum}{.}
+\renewcommand{\cftsubsecaftersnum}{.}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%% Easier references %%%%%
+\newcommand{\formref}[1]{(\ref{#1})}
+\newcommand{\picref}[1]{рис.~\ref{#1}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%% Titlepage and contents %%%%%
+% Set some "variables"
+\renewcommand{\author}[1]{\def\mtauthortext{#1}}
+\renewcommand{\title}[1]{\def\mttitletext{#1}}
+\newcommand{\groupnum}[1]{\def\mtgroupnumtext{#1}}
+\newcommand{\supervisor}[1]{\def\mtsupervisortext{#1}}
+\newcommand{\faculty}[1]{\def\mtfacultytext{#1}}
+\newcommand{\department}[1]{\def\mtdepartmenttext{#1}}
+
+\newcommand{\addemptypage}{%
+    \clearpage \mbox{} \clearpage
+}
+
+% Титульный лист по образцу Прил. 6 Положения о ВКР МФТИ.
+% Отличия от буквы Положения 2019 г.:
+%   * Имя вуза --- «национальный исследовательский университет» (актуальное
+%     официальное наименование МФТИ), а не «государственный университет»
+%     (название из Положения 2019 г., устарело после переименования).
+%   * Город --- «Долгопрудный» (фактический адрес), а не «Москва»
+%     (как написано в образце Прил. 6).
+% На финальной защите титульный всё равно генерируется в личном кабинете
+% обучающегося (Положение, п. 6.2.2.1) с актуальным наименованием вуза;
+% LaTeX-титульный нужен для предзащиты, репозитория и работы над текстом.
+\renewcommand{\titlepage}{%
+    \pagestyle{empty}
+    \begin{center}
+        {\bfseries
+        Федеральное государственное автономное \\
+        образовательное учреждение высшего образования \\
+        <<Московский физико-технический институт \\
+        (национальный исследовательский университет)>>}
+
+        \vspace{1.2cm}
+
+        \mtfacultytext \\
+        \mtdepartmenttext
+    \end{center}
+
+    \vspace{1.5em}
+
+    \noindent Направление подготовки: 09.04.01 Информатика и вычислительная техника
+
+    \begin{center}
+        \vspace{\fill}
+        \singlespacing
+
+        \LARGE\bfseries \MakeUppercase{\mttitletext}
+
+        \vspace{1.5em}
+
+        {\normalfont\normalsize (магистерская диссертация)}
+
+        \vspace{\fill}
+    \end{center}
+
+    \begin{flushright}
+        \begin{tabular}{@{}l@{\hspace{1em}}l@{}}
+        Студент: & \mtauthortext{} \\
+                 & группа \mtgroupnumtext{} \\[0.6em]
+                 & \rule{5cm}{0.4pt} \\
+                 & \footnotesize (подпись студента) \\[1.5em]
+        Научный руководитель: & \mtsupervisortext{} \\[0.6em]
+                 & \rule{5cm}{0.4pt} \\
+                 & \footnotesize (подпись научного руководителя) \\
+        \end{tabular}
+    \end{flushright}
+
+    \vspace{3em}
+
+    \begin{center}
+        Долгопрудный \\
+        \the\year{}
+    \end{center}
+}
+
+\newcommand{\titlecontents}{
+    \titlepage \addemptypage
+    \newpage
+    \tableofcontents \addemptypage
+    \pagestyle{miptthesis}
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% (нет \endgroup — \begingroup\globaldefs=1 выше удалён в рамках TL 2026 fix)
+
+%%%%% На всякий случай ещё раз проверяем группу: если собственные определения
+%%%%% класса открыли группу, закрываем её — чтобы main.tex начинал при GL=0.
+\mt@flush@groups
+
+\endinput
