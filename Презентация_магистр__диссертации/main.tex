@@ -177,20 +177,26 @@
 
 % ===================== L-PB =====================
 \begin{frame}{Limited-memory вариант L-PB}
-Плотная матрица \(B_k\in\R^{n\times n}\) требует \(O(n^2)\) памяти и \(O(n^3)\) операций
-на шаг — неприменимо при \(n\sim10^4\) (при \(n=10^5\) это \(\approx80\) ГБ).
+\small
+\setlength{\abovedisplayskip}{2pt}\setlength{\belowdisplayskip}{2pt}
+Плотная \(B_k\in\R^{n\times n}\): \(O(n^2)\) памяти, \(O(n^3)\) флопс на шаг
+(\(n=10^5\Rightarrow\approx80\) ГБ) — неприменимо.
 
-\medskip
-В режиме накопления мультисекущее обновление специализируется к \textbf{ранг-1} форме
-(Projected Broyden) и через формулу Шермана–Моррисона даёт явное обновление обратной
-матрицы. L-PB хранит скользящее окно из \(m\) троек \((s_j,y_j,v_j)\):
-\[ \mathcal{M}_{\text{L-PB}}=O(nm),\qquad O(nm^2)\ \text{флопс / итерацию}. \]
-{\small
-\begin{itemize}
-  \item Утверждение 2.1: при \(m\ge p_{\max}{+}1\) удерживаются последние \(p_{\max}{+}1\)
-        секущих условий плотной формы.
-  \item Теорема 2.10 переносится на L-PB с той же константой \(C_{\mathrm{PB}}\)
-        (зависит от \(\kappa_p\), не от \(n\)).
+\smallskip
+\textbf{Почему ранг-1.} Projected Broyden обновляет \emph{обратную} матрицу рангом 1 (формула
+Шермана–Моррисона) с секуще-сохраняющим \(v_k=S_pG_p^{-1}e_1\): из \(v_k^\top s_k=1\) и
+\(v_k\perp s_{k-1},\dots,s_{k-p}\) шаг \emph{добавляет} текущую секущую, сохраняя \(p\) прошлых.
+\[ H_{k+1}=H_k+\frac{(s_k-H_ky_k)\,v_k^\top H_k}{v_k^\top H_ky_k},\qquad H_{k+1}y_k=s_k. \]
+
+\textbf{Limited memory.} \(H_k\) не формируется: окно из \(m\) троек \((s_j,y_j,v_j)\),
+применение \(H_kg\) — рекурсия типа L-BFGS (там пары, здесь тройки; \(p_{\max}=0\) даёт
+L-Broyden). \(\mathcal{M}=O(nm)\), \(O(nm^2)\) флопс/итерацию.
+{\footnotesize
+\begin{itemize}\setlength{\itemsep}{1pt}
+  \item \(p=\min(p_{\max},k)\); при \(m\ge p_{\max}{+}1\) выполнено L-PB \(\equiv\) плотный PB
+        на последних \(p_{\max}{+}1\) секущих (Утв.~2.1).
+  \item \(\Rightarrow\) Теорема 2.10 переносится \emph{дословно}, та же \(C_{\mathrm{PB}}\propto\kappa_p\)
+        (не от \(n\)): экономия памяти не стоит ничего в теории.
 \end{itemize}}
 \end{frame}
 
