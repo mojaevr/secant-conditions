@@ -282,7 +282,7 @@ def main():
     ax.set_xlim(0, 80)
     ax.set_xlabel("итерация $k$")
     ax.set_ylabel(r"$\|F(x_k)\|_2 \,/\, \|F(x_0)\|_2$")
-    ax.set_title("Классический Бройден, $B_0=J(x_0)$; "
+    ax.set_title("Классический Бройден, $B_0=J_F(x_0)$; "
                  "Broyden Tridiagonal (MGH #30), $n=100$")
     ax.grid(True, which="both", ls=":", lw=0.5, alpha=0.6)
     ax.legend(fontsize=9.5, loc="center left")
