@@ -51,7 +51,7 @@ TOL = 1e-9
 MAXITER = 60
 GAMMA = 1.0          # вес монотонной нелинейности γ·tanh
 C_REG = 0.5          # коэффициент кубической регуляризации ρ = c·L1·‖Δ‖
-P_WIN = 5            # окно мультисекущего Бройдена (p+1 секущих условий)
+P_WIN = 10            # окно мультисекущего Бройдена (p+1 секущих условий)
 M_MEM = 5            # память односекущего L-Broyden (число JVP-пар)
 
 
@@ -108,7 +108,7 @@ def make_operator(n: int, rng: np.random.Generator):
 #   Квазиньютоновские приближения якобиана J(v) ≈ ∇F(v)
 # ============================================================
 
-def lbroyden_local(JF, v, m, rng):
+def lbroyden_local(JF, v, m, rng, J):
     """Односекущий L-Broyden (Eq. 20 из viqa2024), локально в точке v.
 
     J^{i+1} = J^i + (y_i − J^i s_i) s_iᵀ / (s_iᵀ s_i),  i=0..m−1,
@@ -117,12 +117,12 @@ def lbroyden_local(JF, v, m, rng):
     """
     n = v.size
     Jexact = JF(v)
-    J = np.eye(n)
-    for _ in range(m):
+    # J = np.eye(n)
+    for _ in range(1):
         s = rng.standard_normal(n)
         s /= norm(s)
         y = Jexact @ s
-        J = J + np.outer(y - J @ s, s) / (s @ s)
+    J = J + np.outer(y - J @ s, s) / (s @ s)
     return J
 
 
@@ -169,7 +169,7 @@ def run(prob, oracle, rng, x0):
     v = x0.astype(float).copy()
     Fv = F(v)
     res = [float(norm(Fv))]
-    delta = [float(norm(JF(v) - JF(v), 2))]   # = 0 для старта (J не задан)
+    delta = []   # = 0 для старта (J не задан)
     S_hist, Y_hist = [], []
     J = np.eye(n)
     for k in range(MAXITER):
@@ -178,7 +178,9 @@ def run(prob, oracle, rng, x0):
         if oracle == "exact":
             J = JF(v)
         elif oracle == "lbroyden":
-            J = lbroyden_local(JF, v, M_MEM, rng)
+            # J = lbroyden_local(JF, v, M_MEM, rng, J)
+            if len(S_hist) >= 1:
+                J = msbroyden_update(J, S_hist, Y_hist, 1)
         else:  # multisecant: running update по траектории
             if len(S_hist) >= 1:
                 J = msbroyden_update(J, S_hist, Y_hist, P_WIN)
@@ -210,8 +212,8 @@ def iters_to_tol(res):
 def main():
     os.makedirs(THESIS_DIR, exist_ok=True)
     rng_master = np.random.default_rng(SEED)
-    n = 20
-    n_starts = 12
+    n = 200
+    n_starts = 2
     oracles = ["exact", "multisecant", "lbroyden"]
     labels = {"exact": "точный ∇F",
               "multisecant": f"мультисекущий (p={P_WIN})",
