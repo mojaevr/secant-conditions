@@ -1,0 +1,124 @@
+% Beamer theme for an MIPT (Phystech) master's thesis defense.
+% Primary institution: MIPT; base chair: IITP RAS (ИППИ РАН).
+% Shows BOTH logos: MIPT top-left, IITP top-right.
+% Compile with XeLaTeX or LuaLaTeX.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{beamerthemeIPPI}[2026/06/15 MIPT master's defense theme (dual logo)]
+
+\RequirePackage{tikz}
+\RequirePackage{graphicx}
+\RequirePackage{etoolbox}
+
+\mode<presentation>
+
+% ---------- User-facing metadata ----------
+% Multi-line institution block shown on the title page (use \\ between lines).
+\newcommand{\ippiorg}{}
+\newcommand{\organization}[1]{\renewcommand{\ippiorg}{#1}}
+
+% City / year line at the bottom of the title page.
+\newcommand{\ippicity}{}
+\newcommand{\city}[1]{\renewcommand{\ippicity}{#1}}
+
+% Defense date (footer left + title page).
+\newcommand{\ippidate}{\today}
+\newcommand{\defensedate}[1]{\renewcommand{\ippidate}{#1}}
+
+% Supervisor (with degree) and optional student group / department.
+\newcommand{\ippisupervisor}{}
+\newcommand{\supervisor}[1]{\renewcommand{\ippisupervisor}{#1}}
+\newcommand{\ippistudentgroup}{}
+\newcommand{\studentgroup}[1]{\renewcommand{\ippistudentgroup}{#1}}
+
+% Logos. Primary (top-left) = MIPT; secondary (top-right) = IITP base chair.
+% Change a logo: \orglogo{file.png} (left) or \secondlogo{file.png} (right).
+\newcommand{\ippilogofile}{mipt_logo.png}
+\newcommand{\orglogo}[1]{\renewcommand{\ippilogofile}{#1}}
+\newcommand{\ippilogosecond}{ippi_logo.png}
+\newcommand{\secondlogo}[1]{\renewcommand{\ippilogosecond}{#1}}
+
+% ---------- Base look ----------
+\setbeamertemplate{navigation symbols}{}
+\setbeamersize{text margin left=0.70cm,text margin right=0.70cm}
+\setbeamercolor{normal text}{fg=black,bg=white}
+\setbeamercolor{frametitle}{fg=black,bg=white}
+\setbeamercolor{structure}{fg=black}
+\setbeamercolor{alerted text}{fg=black}
+\setbeamercolor{footline}{fg=black,bg=white}
+\setbeamerfont{frametitle}{series=\bfseries,size=\Large}
+\setbeamerfont{title}{series=\bfseries,size=\large}
+\setbeamerfont{subtitle}{series=\mdseries,size=\large}
+\setbeamerfont{author}{size=\small}
+\setbeamerfont{date}{size=\scriptsize}
+\setbeamerfont{footline}{size=\scriptsize}
+\setbeamerfont{itemize/enumerate body}{size=\normalsize}
+\setbeamerfont{itemize/enumerate subbody}{size=\small}
+
+\setbeamertemplate{itemize item}{\raisebox{0.15ex}{\footnotesize$\bullet$}}
+\setbeamertemplate{itemize subitem}{\raisebox{0.15ex}{\scriptsize$\bullet$}}
+\setbeamertemplate{enumerate item}{\insertenumlabel.}
+
+% ---------- Logo helpers (sized by width; both logos are wide horizontals) ----------
+\newcommand{\IPPILogoLeft}[1][1.75cm]{\includegraphics[width=#1]{\ippilogofile}}
+\newcommand{\IPPILogoRight}[1][1.65cm]{\includegraphics[width=#1]{\ippilogosecond}}
+
+% ---------- Header (both logos + rule); reserves 0.78cm via \vspace ----------
+\newcommand{\ippiheaderline}{%
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north west] at ([xshift=0.43cm,yshift=-0.12cm]current page.north west) {\IPPILogoLeft};
+    \node[anchor=north east] at ([xshift=-0.43cm,yshift=-0.12cm]current page.north east) {\IPPILogoRight};
+    \draw[line width=0.45pt] ([xshift=0.70cm,yshift=-0.70cm]current page.north west) -- ([xshift=-0.70cm,yshift=-0.70cm]current page.north east);
+  \end{tikzpicture}%
+  \vspace{0.78cm}%
+}
+
+% ---------- Footer with REAL height (reserves space => no bottom collision) ----------
+\setbeamertemplate{footline}{%
+  \hbox to\paperwidth{\hskip0.70cm\rule{\dimexpr\paperwidth-1.40cm\relax}{0.35pt}\hskip0.70cm}%
+  \vskip1.6pt%
+  \hbox to\paperwidth{\hskip0.82cm{\usebeamerfont{footline}\ippidate}\hfill{\usebeamerfont{footline}Слайд~\insertframenumber}\hskip0.82cm}%
+  \vskip2.6pt%
+}
+
+\setbeamertemplate{headline}{\ippiheaderline}
+
+\setbeamertemplate{frametitle}{%
+  \begin{centering}
+    \usebeamerfont{frametitle}\insertframetitle\par
+  \end{centering}
+}
+
+% ---------- Title page (both logos prominent) ----------
+\setbeamertemplate{title page}{%
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north west] at ([xshift=0.43cm,yshift=-0.14cm]current page.north west) {\IPPILogoLeft[2.30cm]};
+    \node[anchor=north east] at ([xshift=-0.43cm,yshift=-0.14cm]current page.north east) {\IPPILogoRight[2.15cm]};
+    \draw[line width=0.45pt] ([xshift=0.70cm,yshift=-0.92cm]current page.north west) -- ([xshift=-0.70cm,yshift=-0.92cm]current page.north east);
+    \draw[line width=0.35pt] ([xshift=0.70cm,yshift=0.30cm]current page.south west) -- ([xshift=-0.70cm,yshift=0.30cm]current page.south east);
+  \end{tikzpicture}%
+  \vspace*{0.95cm}
+  \ifdefempty{\ippiorg}{}{%
+    \begin{center}
+      {\scriptsize\ippiorg\par}
+    \end{center}
+  }
+  \vspace{0.18cm}
+  \begin{center}
+    {\footnotesize Магистерская диссертация\par}
+    \vspace{0.26cm}
+    {\usebeamerfont{title}\inserttitle\par}
+    \ifdefempty{\insertsubtitle}{}{\vspace{0.26cm}{\usebeamerfont{subtitle}\insertsubtitle\par}}
+  \end{center}
+  \vspace{0.20cm}
+  \begin{flushleft}
+    {\usebeamerfont{author}\textbf{Студент:}~\insertauthor\par}
+    \ifdefempty{\ippistudentgroup}{}{\vspace{0.04cm}{\small\ippistudentgroup\par}}
+    \ifdefempty{\ippisupervisor}{}{\vspace{0.10cm}{\small\textbf{Научный руководитель:}~\ippisupervisor\par}}
+  \end{flushleft}
+  \vfill
+  \ifdefempty{\ippicity}{}{%
+    \begin{center}{\scriptsize\ippicity\par}\end{center}
+  }
+}
+
+\mode<all>
